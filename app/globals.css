@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Warm walnut / amber palette for the Woodmarketplace brand. */
+    --background: 30 33% 98%;
+    --foreground: 25 30% 12%;
+
+    --card: 30 33% 98%;
+    --card-foreground: 25 30% 12%;
+
+    --popover: 30 33% 98%;
+    --popover-foreground: 25 30% 12%;
+
+    /* Warm amber/walnut primary accent. */
+    --primary: 28 68% 42%;
+    --primary-foreground: 30 40% 98%;
+
+    --secondary: 30 20% 92%;
+    --secondary-foreground: 25 30% 15%;
+
+    --muted: 30 18% 92%;
+    --muted-foreground: 25 12% 40%;
+
+    --accent: 24 45% 88%;
+    --accent-foreground: 25 40% 15%;
+
+    --destructive: 0 72% 42%;
+    --destructive-foreground: 30 40% 98%;
+
+    --border: 30 20% 87%;
+    --input: 30 20% 87%;
+    --ring: 28 68% 42%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark walnut / espresso surface with the same warm amber accent. */
+    --background: 25 25% 8%;
+    --foreground: 30 30% 94%;
+
+    --card: 25 22% 10%;
+    --card-foreground: 30 30% 94%;
+
+    --popover: 25 22% 10%;
+    --popover-foreground: 30 30% 94%;
+
+    --primary: 30 75% 55%;
+    --primary-foreground: 25 30% 10%;
+
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 30 30% 94%;
+
+    --muted: 25 15% 18%;
+    --muted-foreground: 30 12% 65%;
+
+    --accent: 25 20% 22%;
+    --accent-foreground: 30 30% 94%;
+
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 30 30% 94%;
+
+    --border: 25 15% 20%;
+    --input: 25 15% 20%;
+    --ring: 30 75% 55%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
