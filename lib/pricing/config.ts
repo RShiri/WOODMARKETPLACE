@@ -61,3 +61,18 @@ export async function loadPricingContext(): Promise<PricingContext> {
 
   return { config, rates }
 }
+
+/** Lightweight query for just the clearance padding, used by the LEGO lookup route. */
+export async function getClearancePaddingMm(): Promise<number> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('pricing_config')
+    .select('clearance_padding_mm')
+    .eq('id', 1)
+    .single()
+
+  if (error || !data) {
+    throw new Error('pricing_config is not seeded — run supabase/seed.sql.')
+  }
+  return data.clearance_padding_mm
+}
