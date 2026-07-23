@@ -166,7 +166,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
   function handleOrder() {
     if (!quote) return
     setOrdering(true)
-    router.push(`/checkout?quote=${quote.quoteId}`)
+    router.push(`/cart?quote=${quote.quoteId}`)
   }
 
   const dims: { key: 'length' | 'width' | 'height'; label: string; value: number | null; set: (mm: number | null) => void }[] = [
