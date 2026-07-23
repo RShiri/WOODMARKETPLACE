@@ -1,79 +1,96 @@
 # Architecture
 
+See [PLAN.md](./PLAN.md) for the full multi-agent design and rationale. This file tracks the
+schema and folder structure as actually implemented.
+
 ## Database Schema
 
-Defined in [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql). Row Level Security is enabled on every table; policies are added in Phase 2.
+Defined across [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) (kept:
+`profiles` + auth trigger) and
+[`supabase/migrations/0002_display_boxes.sql`](./supabase/migrations/0002_display_boxes.sql)
+(the display-box product model). Row Level Security is enabled on every table.
 
 ### Entity overview
 
 | Table | Purpose |
 |---|---|
-| `profiles` | 1:1 with `auth.users`. Holds `role` (`customer` / `artist` / `admin`) that drives which flows a user sees. Auto-created via `handle_new_user()` trigger on signup. |
-| `artist_profiles` | Extends `profiles` for artists: shop name, public `slug`, bio, banner, verification flag. |
-| `wood_types` | Lookup table powering the storefront's "filter by wood type" facet. |
-| `categories` | Lookup table for product categories, self-referencing `parent_id` for future subcategories. |
-| `products` | The catalog. Belongs to an artist, optional category/wood type, price in cents, `status` (draft/published/archived), SEO meta fields, denormalized `view_count`. |
-| `product_images` | Ordered image gallery per product, pointing at Supabase Storage paths. |
-| `custom_order_inquiries` | The core "secure custom order inquiry" loop — a customer's request to an artist, optionally tied to a product. |
-| `inquiry_messages` | Threaded messages within a single inquiry. |
-| `inquiry_status_history` | Append-only log of inquiry status transitions, written by trigger — feeds funnel/conversion analytics. |
-| `orders` / `order_items` | Minimal checkout data model (Phase 5): an accepted inquiry or direct purchase becomes an order with line items. |
-| `product_views` | Raw page-view event stream (product, viewer, session, referrer) — the source table for future analytics dashboards. |
+| `profiles` | 1:1 with `auth.users`. Holds `role` (`customer` / `admin`). Auto-created via `handle_new_user()` trigger on signup. Optional — checkout does not require an account. |
+| `pricing_config` | Singleton row (id=1) of tunable pricing constants: waste factor, margin %, fees, rounding step, clearance padding, dimension bounds. Mirrored by `lib/pricing/engine.ts`. |
+| `material_costs` | Versioned material rates by `(material, thickness_mm)`. The pricing engine picks thickness from the box's longest dimension, then looks up the active, already-effective rate. |
+| `lego_sets_cache` | Resolved (or estimated) built-model dimensions per LEGO set id, with `source`/`confidence` so the UI can show "estimated — please verify" honestly. |
+| `quotes` | **The single source of truth for a priced box.** Created by both the web calculator and the WhatsApp bot via the same pricing engine call. Checkout always re-reads the price by `id` — never trusts a client-supplied price. Expires after 72h. |
+| `wa_sessions` | One row per phone number; holds the WhatsApp bot's conversation FSM state + context. |
+| `wa_messages` | Append-only in/out message audit log for the WhatsApp bot. |
+| `box_gallery` | Curated marketing gallery for the landing/gallery pages. |
+| `orders` / `order_items` | Guest-friendly checkout data model — `customer_id` is nullable since most orders originate from a WhatsApp deep-link and must not require login. Line items snapshot the quote's description/price at order time. |
 
 ### Design notes
 
-- **Analytics-ready**: `product_views` and `inquiry_status_history` are append-only event tables, kept separate from the mutable entities they describe, so dashboards can aggregate over time without touching operational data.
-- **Money as integers**: all prices are `*_cents` integers to avoid floating-point rounding errors.
-- **Soft taxonomy**: `wood_types` and `categories` are normalized lookup tables (not free-text) so storefront filters and future analytics stay consistent.
-- **RLS-first**: every table has RLS enabled from the first migration — nothing is publicly writable by default even before policies exist.
+- **One pricing engine, three callers**: the web calculator, `POST /api/quote`, and the
+  WhatsApp bot all call the same pure function in `lib/pricing/engine.ts`. Prices are computed
+  server-side only.
+- **Quotes are the trust boundary**: a checkout URL carries an opaque `quote` UUID, never a
+  price or dimensions. The server re-reads the persisted `quotes` row, so URL params can't be
+  edited to change a price.
+- **`quotes`/`wa_sessions`/`wa_messages` have no public/authenticated RLS policies at all** —
+  every read/write goes through server-side API routes using the Supabase service role, which
+  bypasses RLS. This is intentional: it means the only way to touch pricing data is through
+  code that re-validates it, not through a client SDK call.
+- **Money as integers**: all prices are `*_cents` integers to avoid floating-point rounding.
+- **Dimensions in millimeters**: all box/set dimensions are integer millimeters end-to-end.
+- **Guest checkout is the default path**: `orders.customer_id` is nullable; contact details are
+  captured directly on the order. An authenticated customer's own orders are still visible via
+  RLS (`orders_select_own`) for the optional `/account` order-history page.
 
-## Folder Structure (target)
-
-Application scaffolding lands in Phase 2; the tree below is the target layout this repo is organized around.
+## Folder Structure
 
 ```
-woodmarketplace/
+brickcase/
 ├── app/
 │   ├── (marketing)/            # public landing page
 │   ├── (auth)/
 │   │   ├── login/
-│   │   └── register/           # artist vs customer signup
-│   ├── (storefront)/
-│   │   ├── shop/                # product feed + filters (wood type, price, category)
-│   │   ├── products/[slug]/     # SEO-optimized product detail page
-│   │   └── artists/[slug]/      # public artist storefront page
-│   ├── (dashboard)/
-│   │   └── artist/
-│   │       ├── products/        # product CRUD
-│   │       ├── inquiries/       # incoming custom order requests
-│   │       └── profile/         # artist profile management
+│   │   └── register/           # optional account (order history only)
+│   ├── calculator/             # THE core page — dimension + set-id tabs, live price
+│   ├── gallery/                # box_gallery grid
+│   ├── cart/                   # single-quote cart (qty)
+│   ├── checkout/                # quote summary + guest checkout form + confirmation
+│   ├── account/                 # optional: logged-in customer's order history
+│   ├── (dev)/wa-sim/            # WhatsApp bot simulator chat UI (dev-only)
+│   ├── api/
+│   │   ├── quote/                # POST create, GET /:id
+│   │   ├── lego/[setId]/         # GET dimension lookup
+│   │   ├── orders/               # POST quote -> order
+│   │   └── whatsapp/webhook/     # POST inbound message handler
+│   ├── auth/                     # signIn/signUp/signOut server actions + callback route
 │   ├── layout.tsx
 │   └── globals.css
 ├── components/
 │   ├── ui/                      # shadcn/ui primitives
-│   ├── storefront/               # product cards, filters, galleries
-│   ├── dashboard/                 # artist dashboard widgets
-│   └── shared/                    # cross-cutting components (nav, footer, etc.)
+│   ├── shop/                    # calculator, price card/breakdown, gallery, checkout
+│   └── shared/                  # nav, footer
 ├── lib/
-│   ├── supabase/                 # client.ts, server.ts, middleware.ts
-│   ├── validations/               # zod schemas for forms/API input
+│   ├── pricing/                 # engine.ts (pure) + engine.test.ts
+│   ├── lego/                    # resolver.ts (tiered: cache -> Brickset -> Rebrickable+heuristic)
+│   ├── bot/                     # WhatsApp FSM, parsers, adapters (Simulator/Meta/Twilio)
+│   ├── supabase/                # client.ts, server.ts, admin.ts (service role), middleware.ts
+│   ├── validations/              # zod schemas for forms/API input
 │   └── utils/
 ├── types/
 │   └── database.types.ts         # generated from the Supabase schema
 ├── supabase/
 │   ├── migrations/
-│   │   └── 0001_init.sql
+│   │   ├── 0001_init.sql
+│   │   └── 0002_display_boxes.sql
+│   ├── seed.sql
 │   └── config.toml
 ├── public/
 ├── .gitignore
 ├── README.md
+├── PLAN.md
 └── ARCHITECTURE.md
 ```
 
-## Roadmap
+## Execution Phases
 
-1. **Phase 1 — Architecture, Database & Git Setup** *(this phase)*: schema, git setup, folder structure.
-2. **Phase 2 — Setup, Auth & Security**: Next.js/Tailwind/shadcn config, Supabase client setup, artist vs. customer auth flows, RLS policies.
-3. **Phase 3 — The Artist Dashboard**: profile management, product CRUD, inquiry inbox.
-4. **Phase 4 — The Storefront & SEO**: product feed, filters, SEO-optimized product pages with structured data.
-5. **Phase 5 — Custom Orders & Checkout**: inquiry messaging UI, cart/checkout data flow.
+See [PLAN.md](./PLAN.md) §5 for the full phase table (P0–P7) and dependency graph.
