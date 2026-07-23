@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
-import type { ArtistProfile, Profile } from '@/types/database.types'
+import type { Profile } from '@/types/database.types'
 
 export async function getCurrentProfile(): Promise<{ userId: string; email: string | null; profile: Profile } | null> {
   const supabase = await createClient()
@@ -18,38 +18,9 @@ export async function getCurrentProfile(): Promise<{ userId: string; email: stri
   return { userId: user.id, email: user.email ?? null, profile }
 }
 
-/** Redirects to /login if there is no authenticated session. */
+/** Redirects to /login if there is no authenticated session. Used only by /account (order history) — checkout itself is guest-friendly. */
 export async function requireProfile() {
   const session = await getCurrentProfile()
   if (!session) redirect('/login')
-  return session
-}
-
-/** Redirects non-artists away; returns the caller's artist_profiles row alongside their profile. */
-export async function requireArtistProfile(): Promise<{
-  userId: string
-  email: string | null
-  profile: Profile
-  artistProfile: ArtistProfile
-}> {
-  const session = await requireProfile()
-  if (session.profile.role !== 'artist') redirect('/shop')
-
-  const supabase = await createClient()
-  const { data: artistProfile } = await supabase
-    .from('artist_profiles')
-    .select('*')
-    .eq('id', session.userId)
-    .single()
-
-  if (!artistProfile) redirect('/login')
-
-  return { ...session, artistProfile }
-}
-
-/** Redirects non-customers away (used to gate customer-only pages like /checkout). */
-export async function requireCustomerProfile() {
-  const session = await requireProfile()
-  if (session.profile.role !== 'customer') redirect('/artist/products')
   return session
 }

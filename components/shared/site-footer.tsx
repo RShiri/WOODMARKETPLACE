@@ -7,24 +7,24 @@ export function SiteFooter() {
     <footer className="border-t border-border bg-background">
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p className="text-sm font-semibold text-foreground">Woodmarketplace</p>
+          <p className="text-sm font-semibold text-foreground">BrickCase</p>
           <p className="text-sm text-muted-foreground">
-            Handcrafted woodworking, direct from independent artists.
+            Custom perspex display boxes for LEGO collectors, priced fairly by the millimeter.
           </p>
         </div>
 
         <nav className="flex items-center gap-4">
           <Link
-            href="/shop"
+            href="/calculator"
             className="text-sm text-foreground/80 transition-colors hover:text-foreground"
           >
-            Shop
+            Calculator
           </Link>
           <Link
-            href="/register"
+            href="/gallery"
             className="text-sm text-foreground/80 transition-colors hover:text-foreground"
           >
-            Sign Up
+            Gallery
           </Link>
           <Link
             href="/"
@@ -35,7 +35,7 @@ export function SiteFooter() {
         </nav>
 
         <p className="text-sm text-muted-foreground">
-          &copy; {year} Woodmarketplace. All rights reserved.
+          &copy; {year} BrickCase. All rights reserved.
         </p>
       </div>
     </footer>

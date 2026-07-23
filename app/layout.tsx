@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
-import { CartProvider } from "@/components/shared/cart-context";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader } from "@/components/shared/site-header";
 
@@ -15,36 +14,36 @@ const inter = Inter({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const siteName = "Woodmarketplace";
+const siteName = "BrickCase";
 const siteDescription =
-  "Woodmarketplace connects independent woodworking artists with buyers who want handcrafted, one-of-a-kind pieces. Browse curated catalogs, shop direct from artist storefronts, and commission custom work.";
+  "Custom perspex (acrylic) display boxes for LEGO collectors. Enter your dimensions or a LEGO set number and get a fair, transparent price instantly — order on the web or over WhatsApp.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Woodmarketplace | Handcrafted Woodworking, Direct From Artists",
-    template: "%s | Woodmarketplace",
+    default: "BrickCase | Custom Display Boxes for LEGO Collectors",
+    template: "%s | BrickCase",
   },
   description: siteDescription,
   keywords: [
-    "woodworking",
-    "handcrafted furniture",
-    "custom woodwork",
-    "artisan marketplace",
-    "wood artists",
-    "handmade wood decor",
+    "lego display case",
+    "acrylic display box",
+    "perspex display box",
+    "custom lego case",
+    "lego collector display",
+    "display box calculator",
   ],
   openGraph: {
     type: "website",
     locale: "en_US",
     url: siteUrl,
     siteName,
-    title: "Woodmarketplace | Handcrafted Woodworking, Direct From Artists",
+    title: "BrickCase | Custom Display Boxes for LEGO Collectors",
     description: siteDescription,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Woodmarketplace | Handcrafted Woodworking, Direct From Artists",
+    title: "BrickCase | Custom Display Boxes for LEGO Collectors",
     description: siteDescription,
   },
   robots: {
@@ -70,14 +69,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
-        <CartProvider>
-          <div className="flex min-h-screen flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
-          <Toaster richColors closeButton position="top-right" />
-        </CartProvider>
+        <div className="flex min-h-screen flex-col">
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </div>
+        <Toaster richColors closeButton position="top-right" />
       </body>
     </html>
   );

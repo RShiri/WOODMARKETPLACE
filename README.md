@@ -1,28 +1,40 @@
-# Woodmarketplace
+# BrickCase
 
-A niche marketplace platform connecting woodworking artists with customers — catalog browsing, artist storefronts, and secure custom order inquiries.
+Custom perspex (acrylic) display boxes for LEGO collectors — an e-commerce storefront with a
+live dynamic pricing calculator, a LEGO-set-number dimension lookup, and a WhatsApp bot that
+quotes a price and hands back a checkout link.
 
 ## Tech Stack
 
 - **Frontend**: Next.js (App Router), React, Tailwind CSS, shadcn/ui
-- **Backend/Database/Auth**: Supabase (PostgreSQL, Authentication, Storage)
+- **Backend/Database/Auth**: Supabase (PostgreSQL, Authentication)
+- **Pricing/LEGO/Bot logic**: plain TypeScript modules under `lib/`, called from both the web
+  UI and the WhatsApp webhook — one pricing engine, every channel
 - **Deployment**: Vercel
 
 ## Project Status
 
-🚧 MVP in active development. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the database schema and folder structure.
+🚧 In active development. See [ARCHITECTURE.md](./ARCHITECTURE.md) and [PLAN.md](./PLAN.md)
+for the full design and execution plan.
 
 ## Development Roadmap
 
-- [x] **Phase 1**: Architecture, Database & Git Setup
-- [ ] **Phase 2**: Setup, Auth & Security
-- [ ] **Phase 3**: The Artist Dashboard
-- [ ] **Phase 4**: The Storefront & SEO
-- [ ] **Phase 5**: Custom Orders & Checkout
+- [x] **P0**: Repurpose scaffold & rebrand
+- [ ] **P1**: Database schema (quotes, LEGO cache, pricing config)
+- [ ] **P2**: Pricing engine + quote API
+- [ ] **P3**: LEGO dimension resolver
+- [ ] **P4**: Calculator & storefront UI
+- [ ] **P5**: Cart & checkout
+- [ ] **P6**: WhatsApp bot + simulator
+- [ ] **P7**: E2E hardening & demo
 
 ## Getting Started
 
-> Application scaffolding (`package.json`, Next.js config, Supabase client) lands in Phase 2. For now this repo contains the database schema and target folder structure only.
+```bash
+npm install
+cp .env.example .env.local   # fill in your Supabase project credentials
+npm run dev
+```
 
 ### Database
 
@@ -33,6 +45,17 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
+### Tests
+
+The pricing engine and LEGO dimension parser are pure functions with unit tests:
+
+```bash
+npm test
+```
+
 ## Environment Variables
 
-Never commit real secrets. Copy `.env.example` (added in Phase 2) to `.env.local` and fill in your own Supabase project credentials.
+Never commit real secrets. Copy `.env.example` to `.env.local` and fill in your own values.
+`BRICKSET_API_KEY` and `REBRICKABLE_API_KEY` are optional — the LEGO dimension resolver falls
+back to a piece-count heuristic (clearly labeled as an estimate) when they're absent, so the
+app runs end-to-end with zero external API keys.

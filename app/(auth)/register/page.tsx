@@ -22,7 +22,7 @@ export default function RegisterPage() {
         <CardHeader>
           <CardTitle className="text-2xl">Create an Account</CardTitle>
           <CardDescription>
-            Join Woodmarketplace as a customer or set up your artist shop.
+            Save your details for faster checkout and track your orders.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

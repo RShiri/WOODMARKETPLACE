@@ -16,8 +16,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
 
 export function RegisterForm() {
@@ -25,16 +23,8 @@ export function RegisterForm() {
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      role: 'customer',
-      email: '',
-      password: '',
-      fullName: '',
-      shopName: '',
-    },
+    defaultValues: { email: '', password: '', fullName: '' },
   })
-
-  const role = form.watch('role')
 
   async function onSubmit(values: RegisterInput) {
     setIsPending(true)
@@ -42,9 +32,7 @@ export function RegisterForm() {
       const result = await signup(values)
       if (result && 'error' in result) {
         toast.error(result.error)
-        return
-      }
-      if (result && 'message' in result) {
+      } else if (result && 'message' in result) {
         toast.success(result.message)
       }
     } finally {
@@ -57,67 +45,17 @@ export function RegisterForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>I am a...</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="grid grid-cols-2 gap-3"
-                >
-                  <Label
-                    htmlFor="role-customer"
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-input p-3 text-sm font-normal has-[:checked]:border-primary has-[:checked]:bg-accent"
-                  >
-                    <RadioGroupItem value="customer" id="role-customer" />
-                    Customer
-                  </Label>
-                  <Label
-                    htmlFor="role-artist"
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-input p-3 text-sm font-normal has-[:checked]:border-primary has-[:checked]:bg-accent"
-                  >
-                    <RadioGroupItem value="artist" id="role-artist" />
-                    Artist
-                  </Label>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Full name</FormLabel>
               <FormControl>
-                <Input autoComplete="name" placeholder="Jane Carpenter" {...field} />
+                <Input autoComplete="name" placeholder="Jane Bricks" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        {role === 'artist' && (
-          <FormField
-            control={form.control}
-            name="shopName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Shop Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Maple & Grain Woodshop" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
         <FormField
           control={form.control}
           name="email"
@@ -131,7 +69,6 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="password"
@@ -145,9 +82,8 @@ export function RegisterForm() {
             </FormItem>
           )}
         />
-
         <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? 'Creating account…' : 'Create Account'}
+          {isPending ? 'Creating account…' : 'Create account'}
         </Button>
       </form>
     </Form>

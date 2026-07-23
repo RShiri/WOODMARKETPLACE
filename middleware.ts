@@ -2,10 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 import { updateSession } from '@/lib/supabase/middleware'
 
-const PROTECTED_PREFIXES = ['/artist', '/customer', '/checkout']
+// Checkout is intentionally guest-friendly (the WhatsApp bot's deep links must work without
+// forcing a login), so the only route gated behind auth is the optional order-history page.
+const PROTECTED_PREFIXES = ['/account']
 
-/** True for `/artist` and `/artist/...`, but not `/artists` — a plain `startsWith` would
- *  also match the public `/artists/[slug]` storefront route, incorrectly gating it behind login. */
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
@@ -15,9 +15,6 @@ function isProtectedPath(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request)
 
-  // Protect the artist dashboard, customer dashboard, and checkout: any
-  // unauthenticated request to one of these prefixes is redirected to
-  // /login instead of being allowed through.
   if (isProtectedPath(request.nextUrl.pathname) && !user) {
     const loginUrl = new URL('/login', request.url)
     return NextResponse.redirect(loginUrl)
