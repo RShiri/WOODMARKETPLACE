@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseBaseChoice, parseDimensions, parseSetIdToken, parseYesNo } from './parser'
+import { detectLocale, parseBaseChoice, parseDimensions, parseSetIdToken, parseYesNo } from './parser'
 
 describe('parseDimensions', () => {
   it('parses a plain triple as centimeters by default', () => {
@@ -58,6 +58,15 @@ describe('parseDimensions', () => {
   it('returns null when only two numbers are given', () => {
     expect(parseDimensions('30x20')).toBeNull()
   })
+
+  it('recognizes the Hebrew cm unit (ס״מ)', () => {
+    expect(parseDimensions('30x20x25 ס״מ')).toEqual({ lengthMm: 300, widthMm: 200, heightMm: 250 })
+  })
+
+  it('recognizes the Hebrew mm unit (מ״מ), including a plain-quote fallback', () => {
+    expect(parseDimensions('300x200x250 מ״מ')).toEqual({ lengthMm: 300, widthMm: 200, heightMm: 250 })
+    expect(parseDimensions('300x200x250 מ"מ')).toEqual({ lengthMm: 300, widthMm: 200, heightMm: 250 })
+  })
 })
 
 describe('parseSetIdToken', () => {
@@ -91,6 +100,13 @@ describe('parseBaseChoice', () => {
     expect(parseBaseChoice('Black')).toBe('acrylic_black')
   })
 
+  it('accepts Hebrew keywords', () => {
+    expect(parseBaseChoice('ללא')).toBe('none')
+    expect(parseBaseChoice('שקוף')).toBe('acrylic_clear')
+    expect(parseBaseChoice('שחור')).toBe('acrylic_black')
+    expect(parseBaseChoice('לד')).toBe('led')
+  })
+
   it('returns null for an unrecognized choice', () => {
     expect(parseBaseChoice('xyz')).toBeNull()
   })
@@ -105,7 +121,27 @@ describe('parseYesNo', () => {
     expect(parseYesNo('Nope')).toBe('no')
     expect(parseYesNo('edit')).toBe('no')
   })
+  it('recognizes Hebrew yes/no', () => {
+    expect(parseYesNo('כן')).toBe('yes')
+    expect(parseYesNo('לא')).toBe('no')
+  })
   it('returns null for ambiguous input', () => {
     expect(parseYesNo('maybe')).toBeNull()
+  })
+})
+
+describe('detectLocale', () => {
+  it('detects Hebrew script', () => {
+    expect(detectLocale('שלום', 'en')).toBe('he')
+  })
+  it('detects Latin script', () => {
+    expect(detectLocale('hello', 'he')).toBe('en')
+  })
+  it('prefers Hebrew when both scripts are present', () => {
+    expect(detectLocale('10294 שלום', 'en')).toBe('he')
+  })
+  it('keeps the previous language for digits-only input', () => {
+    expect(detectLocale('10294', 'he')).toBe('he')
+    expect(detectLocale('10294', 'en')).toBe('en')
   })
 })

@@ -16,10 +16,12 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { useLocale } from '@/lib/i18n/locale-context'
 import { loginSchema, type LoginInput } from '@/lib/validations/auth'
 
 export function LoginForm() {
   const [isPending, setIsPending] = useState(false)
+  const { dict } = useLocale()
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -49,9 +51,9 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{dict.auth.email}</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" placeholder="you@example.com" {...field} />
+                <Input type="email" autoComplete="email" dir="ltr" placeholder="you@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -62,16 +64,22 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{dict.auth.password}</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="current-password" placeholder="••••••••" {...field} />
+                <Input
+                  type="password"
+                  autoComplete="current-password"
+                  dir="ltr"
+                  placeholder="••••••••"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? 'Logging in…' : 'Log In'}
+          {isPending ? dict.auth.loggingIn : dict.auth.logIn}
         </Button>
       </form>
     </Form>

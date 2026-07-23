@@ -17,7 +17,10 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Heebo covers Hebrew glyphs; browsers fall through to it per-character,
+        // so Latin text still renders in Inter and Hebrew text in Heebo within
+        // the same text run — no locale-conditional class needed.
+        sans: ["var(--font-inter)", "var(--font-heebo)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

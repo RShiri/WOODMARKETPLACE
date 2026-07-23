@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/types'
 import { resolveDimensions } from '@/lib/lego/resolver'
 import { getClearancePaddingMm } from '@/lib/pricing/config'
 import { createQuote } from '@/lib/pricing/quote-service'
@@ -6,7 +7,7 @@ import type { Json } from '@/types/database.types'
 
 import type { WaAdapter } from './adapter'
 import * as messages from './messages'
-import { parseBaseChoice, parseDimensions, parseSetIdToken, parseYesNo } from './parser'
+import { detectLocale, parseBaseChoice, parseDimensions, parseSetIdToken, parseYesNo } from './parser'
 
 type SessionState = 'IDLE' | 'CONFIRM_SET' | 'ASK_BASE' | 'QUOTED'
 
@@ -17,6 +18,8 @@ interface SessionContext {
   confidence?: 'exact' | 'estimated'
   failCount?: number
   lastQuoteId?: string
+  /** Language to reply in, sticky across turns — see lib/bot/parser.ts#detectLocale. */
+  lang?: Locale
 }
 
 export interface ProcessResult {
@@ -68,14 +71,15 @@ async function saveSession(phone: string, state: SessionState, context: SessionC
 /** Handles a message while the session is IDLE or QUOTED — both accept a fresh attempt at dims/set-id input. */
 async function handleFreshInput(
   body: string,
-  context: SessionContext
+  context: SessionContext,
+  lang: Locale
 ): Promise<{ replyText: string; state: SessionState; context: SessionContext }> {
   const dims = parseDimensions(body)
   if (dims) {
     return {
-      replyText: messages.askBaseMessage(dims),
+      replyText: messages.askBaseMessage(dims, lang),
       state: 'ASK_BASE',
-      context: { dims, failCount: 0 },
+      context: { dims, failCount: 0, lang },
     }
   }
 
@@ -84,9 +88,9 @@ async function handleFreshInput(
     const resolved = await resolveDimensions(setId).catch(() => null)
     if (!resolved) {
       return {
-        replyText: messages.lookupFailedMessage(setId),
+        replyText: messages.lookupFailedMessage(setId, lang),
         state: 'IDLE',
-        context: { failCount: (context.failCount ?? 0) + 1 },
+        context: { failCount: (context.failCount ?? 0) + 1, lang },
       }
     }
     const paddingMm = await getClearancePaddingMm()
@@ -96,7 +100,13 @@ async function handleFreshInput(
       heightMm: resolved.heightMm + paddingMm,
     }
     return {
-      replyText: messages.confirmSetMessage(resolved.name, resolved.setId, resolved.confidence, paddedDims),
+      replyText: messages.confirmSetMessage(
+        resolved.name,
+        resolved.setId,
+        resolved.confidence,
+        paddedDims,
+        lang
+      ),
       state: 'CONFIRM_SET',
       context: {
         dims: paddedDims,
@@ -104,50 +114,62 @@ async function handleFreshInput(
         setName: resolved.name,
         confidence: resolved.confidence,
         failCount: 0,
+        lang,
       },
     }
   }
 
   const failCount = (context.failCount ?? 0) + 1
   return {
-    replyText: failCount > MAX_REPROMPTS_BEFORE_HANDOFF ? messages.helpMessage() : messages.greetingMessage(),
+    replyText:
+      failCount > MAX_REPROMPTS_BEFORE_HANDOFF ? messages.helpMessage(lang) : messages.greetingMessage(lang),
     state: 'IDLE',
-    context: { failCount },
+    context: { failCount, lang },
   }
 }
 
 async function handleConfirmSet(
   body: string,
-  context: SessionContext
+  context: SessionContext,
+  lang: Locale
 ): Promise<{ replyText: string; state: SessionState; context: SessionContext }> {
   const yesNo = parseYesNo(body)
   if (yesNo === 'yes' && context.dims) {
-    return { replyText: messages.askBaseMessage(context.dims), state: 'ASK_BASE', context: { dims: context.dims, failCount: 0 } }
+    return {
+      replyText: messages.askBaseMessage(context.dims, lang),
+      state: 'ASK_BASE',
+      context: { dims: context.dims, failCount: 0, lang },
+    }
   }
   if (yesNo === 'no') {
-    return { replyText: messages.editAfterDeclineMessage(), state: 'IDLE', context: {} }
+    return { replyText: messages.editAfterDeclineMessage(lang), state: 'IDLE', context: { lang } }
   }
 
   const overrideDims = parseDimensions(body)
   if (overrideDims) {
     return {
-      replyText: messages.askBaseMessage(overrideDims),
+      replyText: messages.askBaseMessage(overrideDims, lang),
       state: 'ASK_BASE',
-      context: { dims: overrideDims, failCount: 0 },
+      context: { dims: overrideDims, failCount: 0, lang },
     }
   }
 
   const failCount = (context.failCount ?? 0) + 1
   if (failCount > MAX_REPROMPTS_BEFORE_HANDOFF) {
-    return { replyText: messages.helpMessage(), state: 'IDLE', context: {} }
+    return { replyText: messages.helpMessage(lang), state: 'IDLE', context: { lang } }
   }
-  return { replyText: messages.repromptConfirmMessage(), state: 'CONFIRM_SET', context: { ...context, failCount } }
+  return {
+    replyText: messages.repromptConfirmMessage(lang),
+    state: 'CONFIRM_SET',
+    context: { ...context, failCount, lang },
+  }
 }
 
 async function handleAskBase(
   phone: string,
   body: string,
-  context: SessionContext
+  context: SessionContext,
+  lang: Locale
 ): Promise<{ replyText: string; state: SessionState; context: SessionContext }> {
   const baseType = parseBaseChoice(body)
   if (baseType && context.dims) {
@@ -161,17 +183,21 @@ async function handleAskBase(
       waPhone: phone,
     })
     return {
-      replyText: messages.quotedMessage(quote.price_cents, quote.id, siteUrl()),
+      replyText: messages.quotedMessage(quote.price_cents, quote.id, siteUrl(), lang),
       state: 'QUOTED',
-      context: { lastQuoteId: quote.id, failCount: 0 },
+      context: { lastQuoteId: quote.id, failCount: 0, lang },
     }
   }
 
   const failCount = (context.failCount ?? 0) + 1
   if (failCount > MAX_REPROMPTS_BEFORE_HANDOFF) {
-    return { replyText: messages.helpMessage(), state: 'IDLE', context: {} }
+    return { replyText: messages.helpMessage(lang), state: 'IDLE', context: { lang } }
   }
-  return { replyText: messages.repromptBaseMessage(), state: 'ASK_BASE', context: { ...context, failCount } }
+  return {
+    replyText: messages.repromptBaseMessage(lang),
+    state: 'ASK_BASE',
+    context: { ...context, failCount, lang },
+  }
 }
 
 /**
@@ -180,6 +206,11 @@ async function handleAskBase(
  * the reply, and (for a real provider) pushes it via the adapter. Used by
  * both the simulator and — unchanged — any future real webhook route, since
  * everything here is provider-agnostic.
+ *
+ * Reply language is auto-detected per message (Hebrew script anywhere in the
+ * text wins, a digits-only message keeps the session's current language —
+ * see parser.ts#detectLocale) so a Hebrew-speaking collector never has to
+ * ask for it explicitly.
  */
 export async function processInboundMessage(
   rawPhone: string,
@@ -191,19 +222,20 @@ export async function processInboundMessage(
 
   const session = await loadOrCreateSession(phone)
   const context = (session.context ?? {}) as SessionContext
+  const lang = detectLocale(body, context.lang ?? DEFAULT_LOCALE)
 
   let result: { replyText: string; state: SessionState; context: SessionContext }
   switch (session.state as SessionState) {
     case 'CONFIRM_SET':
-      result = await handleConfirmSet(body, context)
+      result = await handleConfirmSet(body, context, lang)
       break
     case 'ASK_BASE':
-      result = await handleAskBase(phone, body, context)
+      result = await handleAskBase(phone, body, context, lang)
       break
     case 'IDLE':
     case 'QUOTED':
     default:
-      result = await handleFreshInput(body, context)
+      result = await handleFreshInput(body, context, lang)
       break
   }
 

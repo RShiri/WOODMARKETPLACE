@@ -30,6 +30,10 @@ export const checkoutSchema = z.object({
   customerEmail: z.string().trim().min(1, 'Email is required').email('Enter a valid email address'),
   customerPhone: z.string().trim().optional().or(z.literal('')),
   shippingAddress: shippingAddressSchema,
+  // The buyer's active UI locale at checkout time — stamped onto the stored
+  // order_items.description so the receipt reads in the language they
+  // actually ordered in, independent of whichever language views it later.
+  locale: z.enum(['en', 'he']),
 })
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>

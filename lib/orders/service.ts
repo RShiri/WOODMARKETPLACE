@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { baseTypeLabel } from '@/lib/pricing/base-types'
+import { getDictionary } from '@/lib/i18n/dictionaries'
 import { getQuoteById, isQuoteExpired } from '@/lib/pricing/quote-service'
+import type { BaseType } from '@/lib/pricing/engine'
 import type { CheckoutInput } from '@/lib/validations/checkout'
 import type { Order } from '@/types/database.types'
 
@@ -47,7 +48,9 @@ export async function placeOrder(
     return { error: 'Could not place your order. Please try again.' }
   }
 
-  const description = `${quote.length_mm / 10}×${quote.width_mm / 10}×${quote.height_mm / 10}cm, ${quote.thickness_mm}mm acrylic, ${baseTypeLabel(quote.base_type)}`
+  const dict = getDictionary(input.locale)
+  const baseLabel = dict.baseTypes[quote.base_type as BaseType].label
+  const description = `${quote.length_mm / 10}×${quote.width_mm / 10}×${quote.height_mm / 10}${dict.common.cm}, ${quote.thickness_mm}${dict.common.mm} acrylic, ${baseLabel}`
 
   const { error: itemError } = await supabase.from('order_items').insert({
     order_id: order.id,

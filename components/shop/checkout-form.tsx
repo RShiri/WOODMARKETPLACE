@@ -18,13 +18,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { useLocale } from '@/lib/i18n/locale-context'
 import { checkoutSchema } from '@/lib/validations/checkout'
 
-const formSchema = checkoutSchema.omit({ quoteId: true, quantity: true })
+const formSchema = checkoutSchema.omit({ quoteId: true, quantity: true, locale: true })
 type FormValues = z.infer<typeof formSchema>
 
 export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity: number }) {
   const router = useRouter()
+  const { locale, dict } = useLocale()
   const [isPending, setIsPending] = useState(false)
 
   const form = useForm<FormValues>({
@@ -48,7 +50,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
   async function onSubmit(values: FormValues) {
     setIsPending(true)
     try {
-      const result = await placeOrder({ ...values, quoteId, quantity })
+      const result = await placeOrder({ ...values, quoteId, quantity, locale })
       if ('error' in result) {
         toast.error(result.error)
         return
@@ -63,14 +65,14 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Contact details</h2>
+          <h2 className="text-sm font-semibold text-foreground">{dict.checkout.contactDetails}</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="customerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>{dict.checkout.fullName}</FormLabel>
                   <FormControl>
                     <Input autoComplete="name" {...field} />
                   </FormControl>
@@ -83,7 +85,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="customerEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{dict.checkout.email}</FormLabel>
                   <FormControl>
                     <Input type="email" autoComplete="email" {...field} />
                   </FormControl>
@@ -96,9 +98,9 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="customerPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone (optional)</FormLabel>
+                  <FormLabel>{dict.checkout.phoneOptional}</FormLabel>
                   <FormControl>
-                    <Input type="tel" autoComplete="tel" {...field} />
+                    <Input type="tel" autoComplete="tel" dir="ltr" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -108,14 +110,14 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
         </div>
 
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Shipping address</h2>
+          <h2 className="text-sm font-semibold text-foreground">{dict.checkout.shippingAddress}</h2>
           <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="shippingAddress.fullName"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
-                  <FormLabel>Recipient name</FormLabel>
+                  <FormLabel>{dict.checkout.recipientName}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -128,7 +130,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="shippingAddress.addressLine1"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
-                  <FormLabel>Address line 1</FormLabel>
+                  <FormLabel>{dict.checkout.addressLine1}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -141,7 +143,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="shippingAddress.addressLine2"
               render={({ field }) => (
                 <FormItem className="sm:col-span-2">
-                  <FormLabel>Address line 2 (optional)</FormLabel>
+                  <FormLabel>{dict.checkout.addressLine2Optional}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -154,7 +156,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="shippingAddress.city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>{dict.checkout.city}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -167,7 +169,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="shippingAddress.state"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>State / province</FormLabel>
+                  <FormLabel>{dict.checkout.state}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -180,7 +182,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="shippingAddress.postalCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Postal code</FormLabel>
+                  <FormLabel>{dict.checkout.postalCode}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -193,7 +195,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
               name="shippingAddress.country"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Country</FormLabel>
+                  <FormLabel>{dict.checkout.country}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -205,7 +207,7 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
         </div>
 
         <Button type="submit" size="lg" disabled={isPending}>
-          {isPending ? 'Placing order…' : 'Place order'}
+          {isPending ? dict.checkout.placingOrder : dict.checkout.placeOrder}
         </Button>
       </form>
     </Form>

@@ -1,3 +1,7 @@
+import { getDictionary } from '@/lib/i18n/dictionaries'
+import { tf } from '@/lib/i18n/format'
+import type { Locale } from '@/lib/i18n/types'
+import { BASE_TYPE_VALUES } from '@/lib/pricing/base-types'
 import { formatPrice } from '@/lib/utils/format'
 
 export interface DimsMm {
@@ -6,78 +10,71 @@ export interface DimsMm {
   heightMm: number
 }
 
-function dimsToCm(dims: DimsMm): string {
-  return `${dims.lengthMm / 10}×${dims.widthMm / 10}×${dims.heightMm / 10}cm`
+function dimsToLocalized(dims: DimsMm, locale: Locale): string {
+  const unit = getDictionary(locale).common.cm
+  return `${dims.lengthMm / 10}×${dims.widthMm / 10}×${dims.heightMm / 10}${unit}`
 }
 
-export function greetingMessage(): string {
-  return [
-    "Hi! 👋 I'm the BrickCase bot — I can quote a custom display box for your LEGO build.",
-    '',
-    "Send me the box dimensions (e.g. 30x20x25cm) or a LEGO set number (e.g. 10294) and I'll get you a price.",
-  ].join('\n')
+export function greetingMessage(locale: Locale): string {
+  return getDictionary(locale).bot.greeting
 }
 
-export function helpMessage(): string {
-  return [
-    "Sorry, I couldn't understand that. Try:",
-    '• Dimensions like 30x20x25cm',
-    '• A LEGO set number like 10294',
-    '',
-    "If that keeps not working, reply 'help' any time or reach us on the website.",
-  ].join('\n')
+export function helpMessage(locale: Locale): string {
+  return getDictionary(locale).bot.help
 }
 
 export function confirmSetMessage(
   setName: string | null,
   setId: string,
   confidence: 'exact' | 'estimated',
-  dims: DimsMm
+  dims: DimsMm,
+  locale: Locale
 ): string {
-  const confidenceNote = confidence === 'estimated' ? ' (estimated — please double-check)' : ''
+  const dict = getDictionary(locale)
+  const confidenceNote = confidence === 'estimated' ? dict.bot.estimatedNote : ''
   return [
-    `Found: ${setName ?? `Set ${setId}`}`,
-    `Suggested case size: ${dimsToCm(dims)}${confidenceNote}`,
+    tf(dict.bot.foundSet, { set: setName ?? `#${setId}` }),
+    tf(dict.bot.suggestedSize, { dims: dimsToLocalized(dims, locale) }) + confidenceNote,
     '',
-    'Use these dimensions? Reply *yes* to continue, or send your own dimensions (e.g. 30x20x25cm).',
+    dict.bot.confirmPrompt,
   ].join('\n')
 }
 
-export function repromptConfirmMessage(): string {
-  return 'Please reply *yes* to use these dimensions, or send your own (e.g. 30x20x25cm).'
+export function repromptConfirmMessage(locale: Locale): string {
+  return getDictionary(locale).bot.repromptConfirm
 }
 
-export function askBaseMessage(dims: DimsMm): string {
+export function askBaseMessage(dims: DimsMm, locale: Locale): string {
+  const dict = getDictionary(locale)
+  const options = BASE_TYPE_VALUES.map((value, i) => `${i + 1}) ${dict.baseTypes[value].label}`)
   return [
-    `Great — a ${dimsToCm(dims)} box. Pick a base:`,
-    '1) No base',
-    '2) Clear acrylic base',
-    '3) Black acrylic base',
-    '4) LED base',
+    tf(dict.bot.chooseBasePrefix, { dims: dimsToLocalized(dims, locale) }),
+    ...options,
     '',
-    'Reply with a number (or type none/clear/black/led).',
+    dict.bot.chooseBaseSuffix,
   ].join('\n')
 }
 
-export function repromptBaseMessage(): string {
-  return 'Please reply with 1, 2, 3, or 4 to pick a base (or type none/clear/black/led).'
+export function repromptBaseMessage(locale: Locale): string {
+  return getDictionary(locale).bot.repromptBase
 }
 
-export function editAfterDeclineMessage(): string {
-  return 'No problem — send me the box dimensions directly, e.g. 30x20x25cm.'
+export function editAfterDeclineMessage(locale: Locale): string {
+  return getDictionary(locale).bot.editAfterDecline
 }
 
-export function quotedMessage(priceCents: number, quoteId: string, siteUrl: string): string {
+export function quotedMessage(priceCents: number, quoteId: string, siteUrl: string, locale: Locale): string {
+  const dict = getDictionary(locale)
   return [
-    `💰 Estimated price: ${formatPrice(priceCents)}`,
+    tf(dict.bot.quotedPrice, { price: formatPrice(priceCents) }),
     '',
-    'Complete your order here (this price is held for 72 hours):',
+    dict.bot.quotedLinkIntro,
     `${siteUrl}/checkout?quote=${quoteId}`,
     '',
-    'Want a different box? Just send new dimensions or a set number.',
+    dict.bot.quotedFooter,
   ].join('\n')
 }
 
-export function lookupFailedMessage(setId: string): string {
-  return `I couldn't look up set ${setId} — you can still send me dimensions directly, e.g. 30x20x25cm.`
+export function lookupFailedMessage(setId: string, locale: Locale): string {
+  return tf(getDictionary(locale).bot.lookupFailed, { setId })
 }

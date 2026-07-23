@@ -4,9 +4,17 @@ import { Package } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { BoxGalleryItem } from '@/types/database.types'
 
-export function GalleryGrid({ items }: { items: BoxGalleryItem[] }) {
+export function GalleryGrid({
+  items,
+  emptyLabel,
+  unitLabel,
+}: {
+  items: BoxGalleryItem[]
+  emptyLabel: string
+  unitLabel: string
+}) {
   if (items.length === 0) {
-    return <p className="text-muted-foreground">No gallery items yet — check back soon.</p>
+    return <p className="text-muted-foreground">{emptyLabel}</p>
   }
 
   return (
@@ -14,7 +22,7 @@ export function GalleryGrid({ items }: { items: BoxGalleryItem[] }) {
       {items.map((item) => {
         const dims =
           item.length_mm && item.width_mm && item.height_mm
-            ? `${item.length_mm / 10} × ${item.width_mm / 10} × ${item.height_mm / 10} cm`
+            ? `${item.length_mm / 10} × ${item.width_mm / 10} × ${item.height_mm / 10} ${unitLabel}`
             : null
 
         const href =

@@ -1,8 +1,10 @@
 import Link from 'next/link'
 
 import { signOut } from '@/app/auth/actions'
+import { LanguageSwitcher } from '@/components/shared/language-switcher'
 import { Button } from '@/components/ui/button'
 import { getCurrentProfile } from '@/lib/auth/session'
+import { getServerDictionary } from '@/lib/i18n/server'
 
 /**
  * Sticky site header. Async Server Component so it can read the current
@@ -10,6 +12,7 @@ import { getCurrentProfile } from '@/lib/auth/session'
  */
 export async function SiteHeader() {
   const session = await getCurrentProfile()
+  const dict = getServerDictionary()
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -24,25 +27,27 @@ export async function SiteHeader() {
               href="/calculator"
               className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
             >
-              Calculator
+              {dict.nav.calculator}
             </Link>
             <Link
               href="/gallery"
               className="text-sm font-medium text-foreground/80 transition-colors hover:text-foreground"
             >
-              Gallery
+              {dict.nav.gallery}
             </Link>
           </nav>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <LanguageSwitcher />
+
           {!session && (
             <>
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Log In</Link>
+                <Link href="/login">{dict.nav.login}</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link href="/calculator">Get a price</Link>
+                <Link href="/calculator">{dict.nav.getPrice}</Link>
               </Button>
             </>
           )}
@@ -50,11 +55,11 @@ export async function SiteHeader() {
           {session && (
             <>
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/account">My Orders</Link>
+                <Link href="/account">{dict.nav.myOrders}</Link>
               </Button>
               <form action={signOut}>
                 <Button variant="ghost" size="sm" type="submit">
-                  Log Out
+                  {dict.nav.logOut}
                 </Button>
               </form>
             </>

@@ -16,10 +16,12 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { useLocale } from '@/lib/i18n/locale-context'
 import { registerSchema, type RegisterInput } from '@/lib/validations/auth'
 
 export function RegisterForm() {
   const [isPending, setIsPending] = useState(false)
+  const { dict } = useLocale()
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -48,7 +50,7 @@ export function RegisterForm() {
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full name</FormLabel>
+              <FormLabel>{dict.auth.fullName}</FormLabel>
               <FormControl>
                 <Input autoComplete="name" placeholder="Jane Bricks" {...field} />
               </FormControl>
@@ -61,9 +63,9 @@ export function RegisterForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{dict.auth.email}</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" placeholder="you@example.com" {...field} />
+                <Input type="email" autoComplete="email" dir="ltr" placeholder="you@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -74,16 +76,22 @@ export function RegisterForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{dict.auth.password}</FormLabel>
               <FormControl>
-                <Input type="password" autoComplete="new-password" placeholder="••••••••" {...field} />
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  dir="ltr"
+                  placeholder="••••••••"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? 'Creating account…' : 'Create account'}
+          {isPending ? dict.auth.creatingAccount : dict.auth.createAccount}
         </Button>
       </form>
     </Form>

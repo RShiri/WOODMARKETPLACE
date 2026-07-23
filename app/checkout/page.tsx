@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { CheckoutForm } from '@/components/shop/checkout-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { baseTypeLabel } from '@/lib/pricing/base-types'
+import { tf } from '@/lib/i18n/format'
+import { getServerDictionary } from '@/lib/i18n/server'
+import type { BaseType } from '@/lib/pricing/engine'
 import { getQuoteById, isQuoteExpired } from '@/lib/pricing/quote-service'
 import { formatPrice } from '@/lib/utils/format'
 
@@ -30,14 +32,15 @@ export default async function CheckoutPage({
 }) {
   const quoteId = typeof searchParams.quote === 'string' ? searchParams.quote : undefined
   const quantity = parseQuantity(typeof searchParams.qty === 'string' ? searchParams.qty : undefined)
+  const dict = getServerDictionary()
 
   if (!quoteId) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold text-foreground">No quote selected</h1>
-        <p className="mt-2 text-muted-foreground">Start from the calculator to get a price.</p>
+        <h1 className="text-2xl font-bold text-foreground">{dict.checkout.noQuoteTitle}</h1>
+        <p className="mt-2 text-muted-foreground">{dict.checkout.noQuoteSubtitle}</p>
         <Button asChild className="mt-6">
-          <Link href="/calculator">Go to calculator</Link>
+          <Link href="/calculator">{dict.checkout.goToCalculator}</Link>
         </Button>
       </main>
     )
@@ -48,10 +51,10 @@ export default async function CheckoutPage({
   if (!quote) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold text-foreground">Quote not found</h1>
-        <p className="mt-2 text-muted-foreground">This link is no longer valid.</p>
+        <h1 className="text-2xl font-bold text-foreground">{dict.checkout.quoteNotFoundTitle}</h1>
+        <p className="mt-2 text-muted-foreground">{dict.checkout.quoteNotFoundSubtitle}</p>
         <Button asChild className="mt-6">
-          <Link href="/calculator">Get a new price</Link>
+          <Link href="/calculator">{dict.checkout.getNewPrice}</Link>
         </Button>
       </main>
     )
@@ -60,16 +63,13 @@ export default async function CheckoutPage({
   if (quote.status !== 'active' || isQuoteExpired(quote)) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold text-foreground">This price has expired</h1>
-        <p className="mt-2 text-muted-foreground">
-          Prices are held for 72 hours to account for material cost changes. Please get a fresh
-          quote to continue.
-        </p>
+        <h1 className="text-2xl font-bold text-foreground">{dict.checkout.expiredTitle}</h1>
+        <p className="mt-2 text-muted-foreground">{dict.checkout.expiredSubtitle}</p>
         <Button asChild className="mt-6">
           <Link
             href={`/calculator?l=${quote.length_mm}&w=${quote.width_mm}&h=${quote.height_mm}&base=${quote.base_type}`}
           >
-            Get a new price
+            {dict.checkout.getNewPrice}
           </Link>
         </Button>
       </main>
@@ -78,23 +78,26 @@ export default async function CheckoutPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Checkout</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{dict.checkout.title}</h1>
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         <CheckoutForm quoteId={quote.id} quantity={quantity} />
 
         <Card className="h-fit">
           <CardContent className="flex flex-col gap-3 p-6">
-            <p className="font-medium text-foreground">Order summary</p>
+            <p className="font-medium text-foreground">{dict.checkout.orderSummary}</p>
             <div className="text-sm text-muted-foreground">
-              {quote.length_mm / 10} × {quote.width_mm / 10} × {quote.height_mm / 10} cm
+              {quote.length_mm / 10} × {quote.width_mm / 10} × {quote.height_mm / 10} {dict.common.cm}
               <br />
-              {quote.thickness_mm}mm acrylic &middot; {baseTypeLabel(quote.base_type)}
+              {tf(dict.checkout.dimsAndBase, {
+                thickness: quote.thickness_mm,
+                base: dict.baseTypes[quote.base_type as BaseType].label,
+              })}
               <br />
-              Qty: {quantity}
+              {tf(dict.checkout.qtyLabel, { qty: quantity })}
             </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-lg font-semibold text-foreground">
-              <span>Total</span>
+              <span>{dict.checkout.totalLabel}</span>
               <span>{formatPrice(quote.price_cents * quantity)}</span>
             </div>
           </CardContent>

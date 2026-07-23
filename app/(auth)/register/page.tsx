@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { getServerDictionary } from '@/lib/i18n/server'
 
 import { RegisterForm } from './register-form'
 
@@ -16,21 +17,21 @@ export const metadata: Metadata = {
 }
 
 export default function RegisterPage() {
+  const dict = getServerDictionary()
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Create an Account</CardTitle>
-          <CardDescription>
-            Save your details for faster checkout and track your orders.
-          </CardDescription>
+          <CardTitle className="text-2xl">{dict.auth.registerTitle}</CardTitle>
+          <CardDescription>{dict.auth.registerSubtitle}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <RegisterForm />
           <p className="text-center text-sm text-muted-foreground">
-            Already have an account?{' '}
+            {dict.auth.haveAccount}{' '}
             <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
-              Log in
+              {dict.auth.logIn}
             </Link>
           </p>
         </CardContent>

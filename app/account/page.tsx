@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { requireProfile } from '@/lib/auth/session'
+import { getServerDictionary } from '@/lib/i18n/server'
 import { createClient } from '@/lib/supabase/server'
 import { formatDateTime, formatPrice } from '@/lib/utils/format'
 
@@ -20,17 +21,18 @@ export default async function AccountPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  const dict = getServerDictionary()
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">My orders</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{dict.account.title}</h1>
 
       {!orders || orders.length === 0 ? (
         <p className="mt-6 text-muted-foreground">
-          No orders yet.{' '}
+          {dict.account.noOrders}{' '}
           <Link href="/calculator" className="underline underline-offset-4">
-            Build a box
-          </Link>{' '}
-          to get started.
+            {dict.account.buildBox}
+          </Link>
         </p>
       ) : (
         <div className="mt-6 flex flex-col gap-4">

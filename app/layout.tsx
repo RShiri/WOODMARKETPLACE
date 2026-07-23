@@ -1,15 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Heebo, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader } from "@/components/shared/site-header";
+import { LocaleProvider } from "@/lib/i18n/locale-context";
+import { getServerLocale } from "@/lib/i18n/server";
+import { isRtl } from "@/lib/i18n/types";
 
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const heebo = Heebo({
+  subsets: ["hebrew", "latin"],
+  variable: "--font-heebo",
   display: "swap",
 });
 
@@ -66,15 +75,24 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const locale = getServerLocale();
+
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang={locale}
+      dir={isRtl(locale) ? "rtl" : "ltr"}
+      className={`${inter.variable} ${heebo.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen font-sans antialiased">
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-        </div>
-        <Toaster richColors closeButton position="top-right" />
+        <LocaleProvider initialLocale={locale}>
+          <div className="flex min-h-screen flex-col">
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+          </div>
+          <Toaster richColors closeButton position="top-right" />
+        </LocaleProvider>
       </body>
     </html>
   );

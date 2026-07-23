@@ -1,4 +1,5 @@
 import { normalizeSetId } from '@/lib/lego/normalize'
+import type { Locale } from '@/lib/i18n/types'
 import type { BaseType } from '@/lib/pricing/engine'
 
 export interface ParsedDimensions {
@@ -40,8 +41,10 @@ export function parseDimensions(text: string): ParsedDimensions | null {
   const values = [a, b, c].map(parseNumber)
   if (values.some((v) => !Number.isFinite(v) || v <= 0)) return null
 
-  const explicitMm = /\bmm\b/i.test(text)
-  const explicitCm = /\bcm\b/i.test(text)
+  // ״מ/"מ tolerates both the real gershayim character and a plain double
+  // quote, since not every phone keyboard types ״ (U+05F4) correctly.
+  const explicitMm = /\bmm\b/i.test(text) || /מ[״"]?מ/.test(text)
+  const explicitCm = /\bcm\b/i.test(text) || /ס[״"]?מ/.test(text)
   const looksLikeMm = !explicitCm && (explicitMm || values.every((v) => v > 120))
 
   const [lengthMm, widthMm, heightMm] = looksLikeMm ? values : values.map((v) => v * 10)
@@ -68,14 +71,19 @@ const BASE_CHOICE_MAP: Record<string, BaseType> = {
   '1': 'none',
   none: 'none',
   no: 'none',
+  'בלי': 'none',
+  'ללא': 'none',
   '2': 'acrylic_clear',
   clear: 'acrylic_clear',
   acrylic: 'acrylic_clear',
+  'שקוף': 'acrylic_clear',
   '3': 'acrylic_black',
   black: 'acrylic_black',
+  'שחור': 'acrylic_black',
   '4': 'led',
   led: 'led',
   light: 'led',
+  'לד': 'led',
 }
 
 export function parseBaseChoice(text: string): BaseType | null {
@@ -83,9 +91,25 @@ export function parseBaseChoice(text: string): BaseType | null {
   return BASE_CHOICE_MAP[normalized] ?? null
 }
 
+const YES_WORDS = ['yes', 'y', 'yep', 'yeah', 'correct', 'confirm', 'כן', 'אישור', 'מאשר']
+const NO_WORDS = ['no', 'n', 'nope', 'edit', 'change', 'לא', 'שנה', 'ערוך']
+
 export function parseYesNo(text: string): 'yes' | 'no' | null {
   const normalized = text.trim().toLowerCase()
-  if (['yes', 'y', 'yep', 'yeah', 'correct', 'confirm'].includes(normalized)) return 'yes'
-  if (['no', 'n', 'nope', 'edit', 'change'].includes(normalized)) return 'no'
+  if (YES_WORDS.includes(normalized)) return 'yes'
+  if (NO_WORDS.includes(normalized)) return 'no'
   return null
+}
+
+/**
+ * Picks the language to reply in for this turn. Hebrew script anywhere in
+ * the message wins (so a Hebrew speaker naming an English brand/set number
+ * doesn't get flipped back to English); a digits-only message (e.g. just
+ * "10294") carries no script signal at all, so it keeps whatever language
+ * the session was already in.
+ */
+export function detectLocale(text: string, previous: Locale): Locale {
+  if (/[֐-׿]/.test(text)) return 'he'
+  if (/[A-Za-z]/.test(text)) return 'en'
+  return previous
 }

@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { BaseTypePicker } from '@/components/shop/base-type-picker'
 import { PriceCard } from '@/components/shop/price-card'
+import { tf } from '@/lib/i18n/format'
+import { useLocale } from '@/lib/i18n/locale-context'
 import type { BaseType, PriceBreakdown } from '@/lib/pricing/engine'
 
 export interface CalculatorInitialState {
@@ -56,6 +58,7 @@ const DEBOUNCE_MS = 450
 
 export function Calculator({ initial }: { initial: CalculatorInitialState }) {
   const router = useRouter()
+  const { dict } = useLocale()
 
   const [tab, setTab] = useState<'dimensions' | 'set'>(initial.tab ?? 'dimensions')
   const [unit, setUnit] = useState<UnitSystem>('cm')
@@ -154,7 +157,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
       setHeightMm(data.suggestedDimensionsMm.height)
       setTab('dimensions')
       if (data.confidence === 'estimated') {
-        toast.info('These dimensions are an estimate — please double-check before ordering.')
+        toast.info(dict.calculator.estimatedToast)
       }
     } catch {
       setSetLookupError('Could not reach the lookup service. Please try again.')
@@ -170,9 +173,9 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
   }
 
   const dims: { key: 'length' | 'width' | 'height'; label: string; value: number | null; set: (mm: number | null) => void }[] = [
-    { key: 'length', label: 'Length', value: lengthMm, set: setLengthMm },
-    { key: 'width', label: 'Width', value: widthMm, set: setWidthMm },
-    { key: 'height', label: 'Height', value: heightMm, set: setHeightMm },
+    { key: 'length', label: dict.calculator.lengthLabel, value: lengthMm, set: setLengthMm },
+    { key: 'width', label: dict.calculator.widthLabel, value: widthMm, set: setWidthMm },
+    { key: 'height', label: dict.calculator.heightLabel, value: heightMm, set: setHeightMm },
   ]
 
   return (
@@ -180,15 +183,15 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
       <div className="flex flex-col gap-6">
         <Tabs value={tab} onValueChange={(v) => setTab(v as 'dimensions' | 'set')}>
           <TabsList>
-            <TabsTrigger value="dimensions">I know my dimensions</TabsTrigger>
-            <TabsTrigger value="set">I have a LEGO set</TabsTrigger>
+            <TabsTrigger value="dimensions">{dict.calculator.tabDimensions}</TabsTrigger>
+            <TabsTrigger value="set">{dict.calculator.tabSet}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dimensions">
             <Card>
               <CardContent className="flex flex-col gap-4 p-6">
                 <div className="flex items-center justify-between">
-                  <Label>Box dimensions</Label>
+                  <Label>{dict.calculator.dimensionsLabel}</Label>
                   <div className="flex items-center gap-1 rounded-md bg-muted p-1 text-xs">
                     {(['cm', 'mm'] as const).map((u) => (
                       <button
@@ -200,7 +203,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
                           (unit === u ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground')
                         }
                       >
-                        {u}
+                        {u === 'cm' ? dict.common.cm : dict.common.mm}
                       </button>
                     ))}
                   </div>
@@ -219,14 +222,14 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
                         step={unit === 'cm' ? 0.1 : 1}
                         value={dim.value != null ? mmToDisplay(dim.value, unit) : ''}
                         onChange={(e) => dim.set(displayToMm(e.target.value, unit))}
-                        placeholder={unit === 'cm' ? 'e.g. 30' : 'e.g. 300'}
+                        placeholder={
+                          unit === 'cm' ? dict.calculator.dimPlaceholderCm : dict.calculator.dimPlaceholderMm
+                        }
                       />
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Measure the built model at its widest points — the case is sized to fit over it.
-                </p>
+                <p className="text-xs text-muted-foreground">{dict.calculator.measureHint}</p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -235,7 +238,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
             <Card>
               <CardContent className="flex flex-col gap-4 p-6">
                 <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="set-id">LEGO set number</Label>
+                  <Label htmlFor="set-id">{dict.calculator.setIdLabel}</Label>
                   <div className="flex gap-2">
                     <Input
                       id="set-id"
@@ -247,14 +250,14 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
                           void lookupSet(setIdInput)
                         }
                       }}
-                      placeholder="e.g. 10294"
+                      placeholder={dict.calculator.setIdPlaceholder}
                     />
                     <Button
                       type="button"
                       onClick={() => void lookupSet(setIdInput)}
                       disabled={setLookupLoading || !setIdInput.trim()}
                     >
-                      {setLookupLoading ? 'Looking up…' : 'Look up'}
+                      {setLookupLoading ? dict.calculator.lookingUpButton : dict.calculator.lookUpButton}
                     </Button>
                   </div>
                   {setLookupError && <p className="text-sm text-destructive">{setLookupError}</p>}
@@ -278,15 +281,17 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
                           {setLookup.name ?? `Set ${setLookup.setId}`}
                         </p>
                         <Badge variant={setLookup.confidence === 'exact' ? 'default' : 'secondary'}>
-                          {setLookup.confidence === 'exact' ? 'exact' : 'estimated'}
+                          {setLookup.confidence === 'exact'
+                            ? dict.calculator.confidenceExact
+                            : dict.calculator.confidenceEstimated}
                         </Badge>
                       </div>
                       {setLookup.pieceCount && (
-                        <p className="text-xs text-muted-foreground">{setLookup.pieceCount} pieces</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tf(dict.calculator.piecesLabel, { count: setLookup.pieceCount })}
+                        </p>
                       )}
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Dimensions filled in below — switch to &ldquo;I know my dimensions&rdquo; to review or edit.
-                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">{dict.calculator.filledBelowHint}</p>
                     </div>
                   </div>
                 )}
@@ -296,7 +301,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
         </Tabs>
 
         <div className="flex flex-col gap-3">
-          <Label>Base</Label>
+          <Label>{dict.calculator.baseLabel}</Label>
           <BaseTypePicker value={baseType} onChange={setBaseType} />
         </div>
       </div>

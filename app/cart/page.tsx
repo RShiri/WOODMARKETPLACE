@@ -8,7 +8,9 @@ import { Minus, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { baseTypeLabel } from '@/lib/pricing/base-types'
+import { tf } from '@/lib/i18n/format'
+import { useLocale } from '@/lib/i18n/locale-context'
+import type { BaseType } from '@/lib/pricing/engine'
 import { formatPrice } from '@/lib/utils/format'
 
 interface QuoteDetails {
@@ -25,6 +27,7 @@ interface QuoteDetails {
 export default function CartPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { dict } = useLocale()
   const quoteId = searchParams.get('quote')
 
   const [quote, setQuote] = useState<QuoteDetails | null>(null)
@@ -41,24 +44,23 @@ export default function CartPage() {
       .then(async (res) => {
         const data = await res.json()
         if (!res.ok) {
-          setError(data.error ?? 'Could not load your quote.')
+          setError(data.error ?? dict.cart.quoteNotFound)
           return
         }
         setQuote(data)
       })
-      .catch(() => setError('Could not load your quote.'))
+      .catch(() => setError(dict.cart.quoteNotFound))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteId])
 
   if (!quoteId) {
     return (
       <main className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-bold text-foreground">Your cart is empty</h1>
-        <p className="mt-2 text-muted-foreground">
-          Build a box in the calculator to add it to your cart.
-        </p>
+        <h1 className="text-2xl font-bold text-foreground">{dict.cart.empty}</h1>
+        <p className="mt-2 text-muted-foreground">{dict.cart.emptySubtitle}</p>
         <Button asChild className="mt-6">
-          <Link href="/calculator">Go to calculator</Link>
+          <Link href="/calculator">{dict.cart.goToCalculator}</Link>
         </Button>
       </main>
     )
@@ -66,7 +68,7 @@ export default function CartPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">Your cart</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{dict.cart.title}</h1>
 
       {loading && (
         <Card className="mt-6">
@@ -79,9 +81,9 @@ export default function CartPage() {
       {!loading && (error || !quote) && (
         <Card className="mt-6">
           <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-            <p className="text-muted-foreground">{error ?? 'Quote not found.'}</p>
+            <p className="text-muted-foreground">{error ?? dict.cart.quoteNotFound}</p>
             <Button asChild>
-              <Link href="/calculator">Get a new price</Link>
+              <Link href="/calculator">{dict.cart.getNewPrice}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -90,14 +92,12 @@ export default function CartPage() {
       {!loading && quote && quote.expired && (
         <Card className="mt-6">
           <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-            <p className="text-muted-foreground">
-              This price quote has expired. Prices are held for 72 hours — please get a fresh one.
-            </p>
+            <p className="text-muted-foreground">{dict.cart.expiredMessage}</p>
             <Button asChild>
               <Link
                 href={`/calculator?l=${quote.lengthMm}&w=${quote.widthMm}&h=${quote.heightMm}&base=${quote.baseType}`}
               >
-                Get a new price
+                {dict.cart.getNewPrice}
               </Link>
             </Button>
           </CardContent>
@@ -110,17 +110,25 @@ export default function CartPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-medium text-foreground">
-                  {quote.lengthMm / 10} × {quote.widthMm / 10} × {quote.heightMm / 10} cm display box
+                  {tf(dict.cart.boxLabel, {
+                    l: quote.lengthMm / 10,
+                    w: quote.widthMm / 10,
+                    h: quote.heightMm / 10,
+                    unit: dict.common.cm,
+                  })}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {quote.thicknessMm}mm acrylic &middot; {baseTypeLabel(quote.baseType)}
+                  {tf(dict.cart.dimsAndBase, {
+                    thickness: quote.thicknessMm,
+                    base: dict.baseTypes[quote.baseType as BaseType].label,
+                  })}
                 </p>
               </div>
               <p className="font-semibold text-foreground">{formatPrice(quote.priceCents)}</p>
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4">
-              <span className="text-sm font-medium text-foreground">Quantity</span>
+              <span className="text-sm font-medium text-foreground">{dict.cart.quantityLabel}</span>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
@@ -145,7 +153,7 @@ export default function CartPage() {
             </div>
 
             <div className="flex items-center justify-between border-t border-border pt-4 text-lg font-semibold">
-              <span>Total</span>
+              <span>{dict.cart.totalLabel}</span>
               <span>{formatPrice(quote.priceCents * quantity)}</span>
             </div>
 
@@ -153,7 +161,7 @@ export default function CartPage() {
               size="lg"
               onClick={() => router.push(`/checkout?quote=${quote.quoteId}&qty=${quantity}`)}
             >
-              Proceed to checkout
+              {dict.cart.proceedButton}
             </Button>
           </CardContent>
         </Card>

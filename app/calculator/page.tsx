@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { Calculator, type CalculatorInitialState } from '@/components/shop/calculator'
+import { getServerDictionary } from '@/lib/i18n/server'
 import type { BaseType } from '@/lib/pricing/engine'
 
 export const metadata: Metadata = {
@@ -38,14 +39,13 @@ export default function CalculatorPage({
     tab: searchParams.tab === 'set' || searchParams.set ? 'set' : 'dimensions',
   }
 
+  const dict = getServerDictionary()
+
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Build your box</h1>
-        <p className="mt-2 text-muted-foreground">
-          Enter your dimensions or a LEGO set number — the price updates live and is fully
-          itemized below.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">{dict.calculator.pageTitle}</h1>
+        <p className="mt-2 text-muted-foreground">{dict.calculator.pageSubtitle}</p>
       </div>
       <Calculator initial={initial} />
     </main>

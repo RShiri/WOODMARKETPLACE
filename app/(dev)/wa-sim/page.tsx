@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useLocale } from '@/lib/i18n/locale-context'
 import { cn } from '@/lib/utils'
 import type { WaMessage } from '@/types/database.types'
 
@@ -19,8 +20,16 @@ const DEFAULT_PHONE = '+15550001234'
  * lib/bot/engine.ts state machine a real WhatsApp webhook would, so this
  * doubles as the WhatsApp bot's demo surface — no Meta/Twilio account
  * needed. Not linked from the main nav; visit /wa-sim directly.
+ *
+ * The bot detects and replies in whichever language you write in (English
+ * or Hebrew — see lib/bot/parser.ts#detectLocale), independent of this
+ * page's own UI language. The message list is pinned dir="ltr" so bubble
+ * alignment (your messages on the right) matches real WhatsApp regardless
+ * of UI language; each bubble's text uses dir="auto" so Hebrew replies
+ * still shape right-to-left inside it.
  */
 export default function WhatsAppSimulatorPage() {
+  const { dict } = useLocale()
   const [phone, setPhone] = useState(DEFAULT_PHONE)
   const [messages, setMessages] = useState<WaMessage[]>([])
   const [input, setInput] = useState('')
@@ -71,36 +80,32 @@ export default function WhatsAppSimulatorPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">WhatsApp Bot Simulator</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Runs the real bot logic (lib/bot/engine.ts) — no WhatsApp account required. Try sending
-        &ldquo;10294&rdquo; or &ldquo;30x20x25cm&rdquo;.
-      </p>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{dict.waSim.title}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{dict.waSim.subtitle}</p>
 
       <div className="mt-6 flex items-end gap-3">
         <div className="flex-1">
           <Label htmlFor="sim-phone" className="text-xs text-muted-foreground">
-            Simulated phone number
+            {dict.waSim.phoneLabel}
           </Label>
           <Input
             id="sim-phone"
+            dir="ltr"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             onBlur={() => void refreshHistory(phone)}
           />
         </div>
         <Button type="button" variant="outline" onClick={() => void refreshHistory(phone)}>
-          Load
+          {dict.waSim.load}
         </Button>
       </div>
 
       <Card className="mt-4">
-        <CardContent className="flex h-[28rem] flex-col gap-3 overflow-y-auto p-4">
-          {loadingHistory && <p className="text-sm text-muted-foreground">Loading…</p>}
+        <CardContent dir="ltr" className="flex h-[28rem] flex-col gap-3 overflow-y-auto p-4">
+          {loadingHistory && <p className="text-sm text-muted-foreground">{dict.waSim.loading}</p>}
           {!loadingHistory && messages.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No messages yet — send one below to start the conversation.
-            </p>
+            <p className="text-sm text-muted-foreground">{dict.waSim.empty}</p>
           )}
           {messages.map((message) => (
             <div
@@ -108,6 +113,7 @@ export default function WhatsAppSimulatorPage() {
               className={cn('flex', message.direction === 'in' ? 'justify-end' : 'justify-start')}
             >
               <div
+                dir="auto"
                 className={cn(
                   'max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm',
                   message.direction === 'in'
@@ -125,6 +131,7 @@ export default function WhatsAppSimulatorPage() {
 
       <div className="mt-4 flex gap-2">
         <Input
+          dir="auto"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -133,11 +140,11 @@ export default function WhatsAppSimulatorPage() {
               void handleSend()
             }
           }}
-          placeholder="Type a message…"
+          placeholder={dict.waSim.placeholder}
           disabled={sending}
         />
         <Button type="button" onClick={() => void handleSend()} disabled={sending || !input.trim()}>
-          {sending ? 'Sending…' : 'Send'}
+          {sending ? dict.waSim.sending : dict.waSim.send}
         </Button>
       </div>
     </main>
