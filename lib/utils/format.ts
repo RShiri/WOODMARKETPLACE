@@ -5,6 +5,11 @@ export function formatPrice(cents: number, currency: string = 'usd'): string {
   }).format(cents / 100)
 }
 
+/** e.g. 305 -> "30.5 cm" — dimensions are stored/priced in mm, shown in cm for readability. */
+export function formatMmAsCm(mm: number): string {
+  return `${(mm / 10).toFixed(1)} cm`
+}
+
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'medium',

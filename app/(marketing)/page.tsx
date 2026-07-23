@@ -64,8 +64,8 @@ export default function MarketingPage() {
             Built for LEGO collectors, priced like it
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            No inflated "collector tax." Just material cost plus a fair, minimal margin —
-            calculated the same way whether you're on the site or messaging us on WhatsApp.
+            No inflated &ldquo;collector tax.&rdquo; Just material cost plus a fair, minimal margin —
+            calculated the same way whether you&apos;re on the site or messaging us on WhatsApp.
           </p>
         </div>
         <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-10 sm:grid-cols-3">
@@ -86,7 +86,7 @@ export default function MarketingPage() {
             Have a LEGO set number handy?
           </h2>
           <p className="max-w-xl text-muted-foreground">
-            Skip the tape measure — type in the set number and we'll pull the built model's
+            Skip the tape measure — type in the set number and we&apos;ll pull the built model&apos;s
             dimensions for you.
           </p>
           <Link
