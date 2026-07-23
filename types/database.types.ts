@@ -1,6 +1,6 @@
 // Hand-written to match the shape produced by:
 //   supabase gen types typescript --project-id <project-ref> > types/database.types.ts
-// Source of truth: supabase/migrations/0001_init.sql + 0002_display_boxes.sql
+// Source of truth: supabase/migrations/0001_init.sql + 0004_display_boxes.sql
 // Regenerate/reconcile this file whenever the schema changes.
 
 export type Json =

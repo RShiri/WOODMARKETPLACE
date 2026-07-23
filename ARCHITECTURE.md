@@ -7,7 +7,7 @@ schema and folder structure as actually implemented.
 
 Defined across [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql) (kept:
 `profiles` + auth trigger) and
-[`supabase/migrations/0002_display_boxes.sql`](./supabase/migrations/0002_display_boxes.sql)
+[`supabase/migrations/0004_display_boxes.sql`](./supabase/migrations/0004_display_boxes.sql)
 (the display-box product model). Row Level Security is enabled on every table.
 
 ### Entity overview
@@ -60,8 +60,8 @@ brickcase/
 │   ├── api/
 │   │   ├── quote/                # POST create, GET /:id
 │   │   ├── lego/[setId]/         # GET dimension lookup
-│   │   ├── orders/               # POST quote -> order
-│   │   └── whatsapp/webhook/     # POST inbound message handler
+│   │   └── whatsapp/webhook/     # POST inbound message handler (provider-facing)
+│   ├── checkout/actions.ts       # server action: quote -> order (guest-friendly)
 │   ├── auth/                     # signIn/signUp/signOut server actions + callback route
 │   ├── layout.tsx
 │   └── globals.css
@@ -70,9 +70,10 @@ brickcase/
 │   ├── shop/                    # calculator, price card/breakdown, gallery, checkout
 │   └── shared/                  # nav, footer
 ├── lib/
-│   ├── pricing/                 # engine.ts (pure) + engine.test.ts
+│   ├── pricing/                 # engine.ts (pure) + engine.test.ts, config.ts, quote-service.ts
 │   ├── lego/                    # resolver.ts (tiered: cache -> Brickset -> Rebrickable+heuristic)
 │   ├── bot/                     # WhatsApp FSM, parsers, adapters (Simulator/Meta/Twilio)
+│   ├── orders/                  # placeOrder / getOrderById (service-role, guest checkout)
 │   ├── supabase/                # client.ts, server.ts, admin.ts (service role), middleware.ts
 │   ├── validations/              # zod schemas for forms/API input
 │   └── utils/
@@ -81,7 +82,7 @@ brickcase/
 ├── supabase/
 │   ├── migrations/
 │   │   ├── 0001_init.sql
-│   │   └── 0002_display_boxes.sql
+│   │   └── 0004_display_boxes.sql
 │   ├── seed.sql
 │   └── config.toml
 ├── public/

@@ -10,7 +10,7 @@ export type PlaceOrderResult = { error: string } | { success: true; orderId: str
  * Places an order from a quote. Never trusts a client-supplied price — the
  * unit price always comes from the persisted `quotes` row, re-read here.
  * Runs on the service role since checkout is guest-friendly (orders has no
- * public/authenticated INSERT policy by design; see 0002_display_boxes.sql).
+ * public/authenticated INSERT policy by design; see 0004_display_boxes.sql).
  */
 export async function placeOrder(
   input: CheckoutInput,

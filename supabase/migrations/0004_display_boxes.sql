@@ -29,6 +29,18 @@ drop table if exists artist_profiles;
 
 drop function if exists log_inquiry_status_change();
 
+-- Storage buckets/policies from 0003_storage.sql were scoped to the
+-- artist/product model dropped above — no longer meaningful here.
+drop policy if exists "product_images_select_all" on storage.objects;
+drop policy if exists "product_images_insert_own" on storage.objects;
+drop policy if exists "product_images_update_own" on storage.objects;
+drop policy if exists "product_images_delete_own" on storage.objects;
+drop policy if exists "artist_banners_select_all" on storage.objects;
+drop policy if exists "artist_banners_insert_own" on storage.objects;
+drop policy if exists "artist_banners_update_own" on storage.objects;
+drop policy if exists "artist_banners_delete_own" on storage.objects;
+delete from storage.buckets where id in ('product-images', 'artist-banners');
+
 drop type if exists product_status;
 drop type if exists inquiry_status;
 
