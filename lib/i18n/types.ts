@@ -1,7 +1,7 @@
 export type Locale = 'en' | 'he'
 
 export const LOCALES: Locale[] = ['en', 'he']
-export const DEFAULT_LOCALE: Locale = 'en'
+export const DEFAULT_LOCALE: Locale = 'he'
 
 export function isRtl(locale: Locale): boolean {
   return locale === 'he'
