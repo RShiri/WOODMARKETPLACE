@@ -51,6 +51,62 @@ The seed data includes default pricing config, sample material rates, a few gall
 5 pre-cached famous LEGO sets — the app is unusable without at least `pricing_config` and
 `material_costs` seeded (every quote request depends on them).
 
+## Deploying to Production (Supabase + Vercel)
+
+No CLI required — everything below is copy-paste through the two dashboards.
+
+### 1. Create a Supabase project
+
+1. Go to [supabase.com](https://supabase.com) → **New Project**. Pick a name, a database
+   password (save it somewhere), and a region. Provisioning takes ~2 minutes.
+2. **Project Settings → API** — copy three values, you'll need them in step 3:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role** key → `SUPABASE_SERVICE_ROLE_KEY` (keep this one secret — never put it in
+     client-side code or a public repo)
+
+### 2. Run the database migrations
+
+In the Supabase dashboard, open **SQL Editor → New query**, then run each file in
+`supabase/migrations/` **in order** (0001 → 0007), pasting the full contents of each file and
+clicking Run before moving to the next one. Then do the same with `supabase/seed.sql` — it's
+safe to re-run and is what makes the calculator actually return a price (default pricing
+config + material rates + a few pre-cached LEGO sets).
+
+### 3. Deploy to Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **Add New → Project** → import this GitHub repo.
+2. Vercel auto-detects Next.js — no build config changes needed. Set the branch to deploy
+   (this branch, `claude/lego-display-box-ecommerce-j7bbxy`, or `main` once merged).
+3. Under **Environment Variables**, add:
+
+   | Name | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | from step 1 |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | from step 1 |
+   | `SUPABASE_SERVICE_ROLE_KEY` | from step 1 |
+   | `NEXT_PUBLIC_SITE_URL` | leave blank for now — see step 4 |
+   | `WHATSAPP_WEBHOOK_SECRET` | any random string |
+
+4. Click **Deploy**. Once it finishes, copy the assigned `*.vercel.app` URL, go back to
+   **Project Settings → Environment Variables**, set `NEXT_PUBLIC_SITE_URL` to that URL, and
+   redeploy (**Deployments → ⋯ → Redeploy**) — this is what makes checkout links (including the
+   ones the WhatsApp bot hands back) point at the right place.
+
+### 4. Send the demo
+
+Share the Vercel URL directly — that's the live storefront. For the WhatsApp bot flow without a
+real WhatsApp Business account, send `<your-url>/wa-sim` instead (see the Demo section below);
+it runs the identical bot logic in a browser chat UI.
+
+### 5. Make yourself an admin (optional, for `/admin/orders`)
+
+Register a normal account at `/register`, then in Supabase's **SQL Editor** run:
+
+```sql
+update profiles set role = 'admin' where id = (select id from auth.users where email = 'you@example.com');
+```
+
 ### Tests
 
 The pricing engine, LEGO set parser/heuristic, and WhatsApp message parser are all pure
@@ -78,8 +134,9 @@ With `npm run dev` running and the database migrated + seeded:
    - Switch to "I have a LEGO set", enter `10294` (pre-seeded — the Titanic), and watch it
      auto-fill dimensions with a confidence badge.
    - Click "How is this calculated?" to see the full cost breakdown.
-   - Click "Order this box" → adjust quantity on `/cart` → fill in guest checkout details on
-     `/checkout` (no account required) → land on the confirmation page.
+   - Click "Order this box" to add it to your cart (top-right icon) — the cart supports
+     multiple boxes at once. Adjust quantities on `/cart`, then fill in guest checkout details
+     on `/checkout` (no account required) → land on the confirmation page.
 2. **WhatsApp bot simulator** — go to `/wa-sim` (not linked from the main nav; dev tool). Try:
    - `10294` → bot resolves the set, asks to confirm dimensions → reply `yes` → pick a base
      (`1`–`4`) → bot replies with a price and a `/checkout?quote=...` link.
@@ -91,4 +148,5 @@ With `npm run dev` running and the database migrated + seeded:
    `lib/pricing/engine.ts`.
 
 Optional: create an account at `/register` before checking out — the resulting order will show
-up at `/account`.
+up at `/account`. Admin accounts (see the deployment guide above) can see and update every
+order's status at `/admin/orders`.
