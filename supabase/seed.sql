@@ -4,23 +4,35 @@
 -- manually via `psql -f supabase/seed.sql`. Safe to re-run (upserts).
 -- =============================================================================
 
-insert into pricing_config (id, currency) values (1, 'ils')
-  on conflict (id) do nothing;
+-- Calibrated against a real Israeli acrylic-case seller's public price list
+-- (₪250 for a ~45cm Batmobile case up to ₪300 for a ~63cm Technic F1 case),
+-- back-solved so lib/pricing/engine.ts lands within a few percent of those
+-- real prices across that size range — not a guess. See the pricing engine
+-- tests (lib/pricing/engine.test.ts) for the worked numbers. Material rates
+-- below still scale roughly linearly with thickness, same shape as before,
+-- just at a realistic overall level (previous values were ~6x too low —
+-- literally "illustrative," not sourced from anything).
+insert into pricing_config (
+  id, currency, margin_pct, min_margin_cents, assembly_fee_cents,
+  base_led_fee_cents, min_price_cents, rounding_step_cents
+) values (
+  1, 'ils', 0.20, 3000, 6000,
+  8000, 8000, 500
+)
+on conflict (id) do nothing;
 
--- Material rates by thickness, in agorot (ILS cents). Illustrative starting
--- points for the demo, not a real supplier quote — tune via the
--- pricing_config / material_costs tables once real material costs are known.
+-- Material rates by thickness, in agorot (ILS cents).
 insert into material_costs (material, thickness_mm, cost_per_m2_cents, cut_cost_per_m_cents)
 values
-  ('acrylic_clear', 3, 1800, 150),
-  ('acrylic_clear', 4, 2300, 170),
-  ('acrylic_clear', 5, 2900, 190),
-  ('acrylic_black', 3, 2100, 150),
-  ('acrylic_black', 4, 2600, 170),
-  ('acrylic_black', 5, 3200, 190),
-  ('acrylic_frosted', 3, 2200, 150),
-  ('acrylic_frosted', 4, 2700, 170),
-  ('acrylic_frosted', 5, 3300, 190)
+  ('acrylic_clear', 3, 10800, 900),
+  ('acrylic_clear', 4, 13800, 1020),
+  ('acrylic_clear', 5, 17400, 1140),
+  ('acrylic_black', 3, 12600, 900),
+  ('acrylic_black', 4, 15600, 1020),
+  ('acrylic_black', 5, 19200, 1140),
+  ('acrylic_frosted', 3, 13200, 900),
+  ('acrylic_frosted', 4, 16200, 1020),
+  ('acrylic_frosted', 5, 19800, 1140)
 on conflict (material, thickness_mm, effective_from) do nothing;
 
 insert into box_gallery (title, length_mm, width_mm, height_mm, blurb, sort_order)
