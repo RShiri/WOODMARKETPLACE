@@ -3,11 +3,22 @@ import { z } from 'zod'
 
 import { SimulatorAdapter } from '@/lib/bot/adapter'
 import { processInboundMessage } from '@/lib/bot/engine'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const inboundSchema = z.object({
   phone: z.string().trim().min(3).max(32),
   body: z.string().trim().min(1).max(1000),
 })
+
+// Coarser IP-based limit on top of the per-phone limit inside
+// processInboundMessage — stops someone from dodging the per-phone cap by
+// rotating fake phone numbers from a single source.
+const WEBHOOK_IP_RATE_LIMIT = 60
+const WEBHOOK_IP_RATE_WINDOW_SECONDS = 60
+
+function clientIp(request: NextRequest): string {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+}
 
 /**
  * The provider-facing webhook. Real providers (Meta Cloud API, Twilio) would
@@ -26,6 +37,18 @@ export async function POST(request: NextRequest) {
   const secret = process.env.WHATSAPP_WEBHOOK_SECRET
   if (secret && request.headers.get('x-webhook-secret') !== secret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const rateLimit = await checkRateLimit(
+    `wa-webhook:${clientIp(request)}`,
+    WEBHOOK_IP_RATE_LIMIT,
+    WEBHOOK_IP_RATE_WINDOW_SECONDS
+  )
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests.' },
+      { status: 429, headers: { 'Retry-After': String(WEBHOOK_IP_RATE_WINDOW_SECONDS) } }
+    )
   }
 
   let json: unknown

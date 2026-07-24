@@ -3,8 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // Checkout is intentionally guest-friendly (the WhatsApp bot's deep links must work without
-// forcing a login), so the only route gated behind auth is the optional order-history page.
-const PROTECTED_PREFIXES = ['/account']
+// forcing a login), so only the optional order-history page and the admin dashboard are gated
+// behind auth here. /admin's *role* check (customer vs admin) happens in requireAdminProfile()
+// server-side, since middleware would need an extra DB round trip to check role on every request.
+const PROTECTED_PREFIXES = ['/account', '/admin']
 
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PREFIXES.some(

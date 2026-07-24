@@ -24,3 +24,10 @@ export async function requireProfile() {
   if (!session) redirect('/login')
   return session
 }
+
+/** Redirects non-admins to /login (or / if logged in as something else). Gates /admin/*. */
+export async function requireAdminProfile() {
+  const session = await requireProfile()
+  if (session.profile.role !== 'admin') redirect('/')
+  return session
+}

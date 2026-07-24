@@ -55,13 +55,13 @@ export default async function ConfirmationPage({
                 {item.description} &times;{item.quantity}
               </span>
               <span className="font-medium text-foreground">
-                {formatPrice(item.unit_price_cents * item.quantity)}
+                {formatPrice(item.unit_price_cents * item.quantity, order.currency)}
               </span>
             </div>
           ))}
           <div className="flex items-center justify-between border-t border-border pt-3 text-lg font-semibold text-foreground">
             <span>{dict.confirmation.total}</span>
-            <span>{formatPrice(order.total_price_cents)}</span>
+            <span>{formatPrice(order.total_price_cents, order.currency)}</span>
           </div>
         </CardContent>
       </Card>

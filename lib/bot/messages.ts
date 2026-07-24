@@ -63,10 +63,16 @@ export function editAfterDeclineMessage(locale: Locale): string {
   return getDictionary(locale).bot.editAfterDecline
 }
 
-export function quotedMessage(priceCents: number, quoteId: string, siteUrl: string, locale: Locale): string {
+export function quotedMessage(
+  priceCents: number,
+  currency: string,
+  quoteId: string,
+  siteUrl: string,
+  locale: Locale
+): string {
   const dict = getDictionary(locale)
   return [
-    tf(dict.bot.quotedPrice, { price: formatPrice(priceCents) }),
+    tf(dict.bot.quotedPrice, { price: formatPrice(priceCents, currency) }),
     '',
     dict.bot.quotedLinkIntro,
     `${siteUrl}/checkout?quote=${quoteId}`,

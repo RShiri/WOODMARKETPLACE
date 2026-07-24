@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { login } from '@/app/auth/actions'
+import { updatePassword } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,24 +17,21 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useLocale } from '@/lib/i18n/locale-context'
-import { loginSchema, type LoginInput } from '@/lib/validations/auth'
+import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/auth'
 
-export function LoginForm() {
+export function ResetPasswordForm() {
   const [isPending, setIsPending] = useState(false)
   const { dict } = useLocale()
 
-  const form = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  const form = useForm<ResetPasswordInput>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
   })
 
-  async function onSubmit(values: LoginInput) {
+  async function onSubmit(values: ResetPasswordInput) {
     setIsPending(true)
     try {
-      const result = await login(values)
+      const result = await updatePassword(values)
       if (result && 'error' in result) {
         toast.error(result.error)
       }
@@ -49,12 +45,12 @@ export function LoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="email"
+          name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{dict.auth.email}</FormLabel>
+              <FormLabel>{dict.auth.newPassword}</FormLabel>
               <FormControl>
-                <Input type="email" autoComplete="email" dir="ltr" placeholder="you@example.com" {...field} />
+                <Input type="password" autoComplete="new-password" dir="ltr" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -62,33 +58,19 @@ export function LoginForm() {
         />
         <FormField
           control={form.control}
-          name="password"
+          name="confirmPassword"
           render={({ field }) => (
             <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>{dict.auth.password}</FormLabel>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
-                >
-                  {dict.auth.forgotPassword}
-                </Link>
-              </div>
+              <FormLabel>{dict.auth.confirmPassword}</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
-                  autoComplete="current-password"
-                  dir="ltr"
-                  placeholder="••••••••"
-                  {...field}
-                />
+                <Input type="password" autoComplete="new-password" dir="ltr" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? dict.auth.loggingIn : dict.auth.logIn}
+          {isPending ? dict.auth.updatingPassword : dict.auth.updatePassword}
         </Button>
       </form>
     </Form>

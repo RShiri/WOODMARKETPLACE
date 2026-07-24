@@ -20,7 +20,7 @@ export interface CreateQuoteParams {
  * a box through the exact same engine call and persists it the same way.
  */
 export async function createQuote(params: CreateQuoteParams): Promise<Quote> {
-  const { config, rates } = await loadPricingContext()
+  const { config, rates, currency } = await loadPricingContext()
 
   const result = calculatePrice(
     {
@@ -47,6 +47,7 @@ export async function createQuote(params: CreateQuoteParams): Promise<Quote> {
       breakdown: result.breakdown as unknown as Json,
       channel: params.channel,
       wa_phone: params.waPhone ?? null,
+      currency,
     })
     .select('*')
     .single()

@@ -15,6 +15,7 @@ import type { BaseType, PriceBreakdown } from '@/lib/pricing/engine'
 interface QuoteResult {
   quoteId: string
   priceCents: number
+  currency: string
   thicknessMm: number
   breakdown: PriceBreakdown
 }
@@ -59,7 +60,7 @@ export function PriceCard({
             <p className="mt-1 text-sm text-destructive">{error}</p>
           ) : quote ? (
             <p className="mt-1 text-4xl font-bold tracking-tight text-foreground">
-              {formatPrice(quote.priceCents)}
+              {formatPrice(quote.priceCents, quote.currency)}
             </p>
           ) : (
             <p className="mt-1 text-2xl font-semibold text-muted-foreground">
@@ -95,13 +96,13 @@ export function PriceCard({
                     <div key={row.key} className="flex items-center justify-between">
                       <dt className="text-muted-foreground">{row.label}</dt>
                       <dd className="font-medium text-foreground">
-                        {formatPrice(quote.breakdown[row.key] as number)}
+                        {formatPrice(quote.breakdown[row.key] as number, quote.currency)}
                       </dd>
                     </div>
                   ))}
                 <div className="flex items-center justify-between border-t border-border pt-1.5 font-semibold">
                   <dt>{dict.breakdown.total}</dt>
-                  <dd>{formatPrice(quote.priceCents)}</dd>
+                  <dd>{formatPrice(quote.priceCents, quote.currency)}</dd>
                 </div>
               </dl>
             )}

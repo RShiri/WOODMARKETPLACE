@@ -20,6 +20,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     thicknessMm: quote.thickness_mm,
     legoSetId: quote.lego_set_id,
     priceCents: quote.price_cents,
+    currency: quote.currency,
     breakdown: quote.breakdown,
     status: quote.status,
     expired,

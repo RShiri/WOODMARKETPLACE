@@ -5,6 +5,8 @@ import type { MaterialRate, PricingConfigInput } from './engine'
 export interface PricingContext {
   config: PricingConfigInput
   rates: MaterialRate[]
+  /** ISO 4217 currency code the shop prices in (e.g. 'ils'). Not part of PricingConfigInput — the engine's math is currency-agnostic. */
+  currency: string
 }
 
 /**
@@ -59,7 +61,7 @@ export async function loadPricingContext(): Promise<PricingContext> {
     maxDimMm: configRow.max_dim_mm,
   }
 
-  return { config, rates }
+  return { config, rates, currency: configRow.currency }
 }
 
 /** Lightweight query for just the clearance padding, used by the LEGO lookup route. */

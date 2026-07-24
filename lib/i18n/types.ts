@@ -26,6 +26,7 @@ export interface Dictionary {
     getPrice: string
     myOrders: string
     logOut: string
+    admin: string
   }
   footer: {
     tagline: string
@@ -117,6 +118,8 @@ export interface Dictionary {
     quantityLabel: string
     totalLabel: string
     proceedButton: string
+    remove: string
+    itemUnavailable: string
   }
   checkout: {
     title: string
@@ -176,6 +179,33 @@ export interface Dictionary {
     fullName: string
     createAccount: string
     creatingAccount: string
+    forgotPassword: string
+    forgotPasswordTitle: string
+    forgotPasswordSubtitle: string
+    resetEmailSentMessage: string
+    sendResetLink: string
+    sendingResetLink: string
+    backToLogin: string
+    resetPasswordTitle: string
+    resetPasswordSubtitle: string
+    newPassword: string
+    confirmPassword: string
+    updatePassword: string
+    updatingPassword: string
+  }
+  admin: {
+    ordersTitle: string
+    noOrders: string
+    customer: string
+    shippingAddress: string
+    items: string
+    statusUpdated: string
+    statusUpdateFailed: string
+    statusPending: string
+    statusPaid: string
+    statusFulfilled: string
+    statusCancelled: string
+    statusRefunded: string
   }
   waSim: {
     title: string
@@ -209,5 +239,6 @@ export interface Dictionary {
     quotedLinkIntro: string
     quotedFooter: string
     lookupFailed: string // "{setId}" placeholder
+    rateLimited: string
   }
 }

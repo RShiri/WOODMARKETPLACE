@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Heebo, Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
+import { CartProvider } from "@/components/shared/cart-context";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { SiteHeader } from "@/components/shared/site-header";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
@@ -86,12 +87,14 @@ export default function RootLayout({
     >
       <body className="min-h-screen font-sans antialiased">
         <LocaleProvider initialLocale={locale}>
-          <div className="flex min-h-screen flex-col">
-            <SiteHeader />
-            <main className="flex-1">{children}</main>
-            <SiteFooter />
-          </div>
-          <Toaster richColors closeButton position="top-right" />
+          <CartProvider>
+            <div className="flex min-h-screen flex-col">
+              <SiteHeader />
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
+            </div>
+            <Toaster richColors closeButton position="top-right" />
+          </CartProvider>
         </LocaleProvider>
       </body>
     </html>

@@ -4,12 +4,12 @@
 -- manually via `psql -f supabase/seed.sql`. Safe to re-run (upserts).
 -- =============================================================================
 
-insert into pricing_config (id) values (1)
+insert into pricing_config (id, currency) values (1, 'ils')
   on conflict (id) do nothing;
 
--- Material rates by thickness. Numbers are illustrative starting points for
--- the demo, not a real supplier quote — tune via the pricing_config /
--- material_costs tables once real material costs are known.
+-- Material rates by thickness, in agorot (ILS cents). Illustrative starting
+-- points for the demo, not a real supplier quote — tune via the
+-- pricing_config / material_costs tables once real material costs are known.
 insert into material_costs (material, thickness_mm, cost_per_m2_cents, cut_cost_per_m_cents)
 values
   ('acrylic_clear', 3, 1800, 150),

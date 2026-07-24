@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { signOut } from '@/app/auth/actions'
+import { CartLink } from '@/components/shared/cart-link'
 import { LanguageSwitcher } from '@/components/shared/language-switcher'
 import { Button } from '@/components/ui/button'
 import { getCurrentProfile } from '@/lib/auth/session'
@@ -39,6 +40,7 @@ export async function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <CartLink />
           <LanguageSwitcher />
 
           {!session && (
@@ -54,6 +56,11 @@ export async function SiteHeader() {
 
           {session && (
             <>
+              {session.profile.role === 'admin' && (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/admin/orders">{dict.nav.admin}</Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/account">{dict.nav.myOrders}</Link>
               </Button>

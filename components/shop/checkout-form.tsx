@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { placeOrder } from '@/app/checkout/actions'
+import { useCart } from '@/components/shared/cart-context'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -19,14 +20,22 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useLocale } from '@/lib/i18n/locale-context'
-import { checkoutSchema } from '@/lib/validations/checkout'
+import { checkoutSchema, type CheckoutLineItemInput } from '@/lib/validations/checkout'
 
-const formSchema = checkoutSchema.omit({ quoteId: true, quantity: true, locale: true })
+const formSchema = checkoutSchema.omit({ items: true, locale: true })
 type FormValues = z.infer<typeof formSchema>
 
-export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity: number }) {
+export function CheckoutForm({
+  items,
+  clearCartOnSuccess,
+}: {
+  items: CheckoutLineItemInput[]
+  /** True for the cart-driven flow; false for a direct WhatsApp ?quote= link, which was never added to the cart and must not wipe unrelated items sitting in it. */
+  clearCartOnSuccess: boolean
+}) {
   const router = useRouter()
   const { locale, dict } = useLocale()
+  const { clear } = useCart()
   const [isPending, setIsPending] = useState(false)
 
   const form = useForm<FormValues>({
@@ -50,11 +59,12 @@ export function CheckoutForm({ quoteId, quantity }: { quoteId: string; quantity:
   async function onSubmit(values: FormValues) {
     setIsPending(true)
     try {
-      const result = await placeOrder({ ...values, quoteId, quantity, locale })
+      const result = await placeOrder({ ...values, items, locale })
       if ('error' in result) {
         toast.error(result.error)
         return
       }
+      if (clearCartOnSuccess) clear()
       router.push(`/checkout/confirmation?order=${result.orderId}`)
     } finally {
       setIsPending(false)

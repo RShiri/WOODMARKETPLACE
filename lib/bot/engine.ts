@@ -1,7 +1,9 @@
+import { getDictionary } from '@/lib/i18n/dictionaries'
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/types'
 import { resolveDimensions } from '@/lib/lego/resolver'
 import { getClearancePaddingMm } from '@/lib/pricing/config'
 import { createQuote } from '@/lib/pricing/quote-service'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Json } from '@/types/database.types'
 
@@ -28,6 +30,8 @@ export interface ProcessResult {
 }
 
 const MAX_REPROMPTS_BEFORE_HANDOFF = 2
+const WA_RATE_LIMIT = 20
+const WA_RATE_WINDOW_SECONDS = 60
 
 function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -183,7 +187,7 @@ async function handleAskBase(
       waPhone: phone,
     })
     return {
-      replyText: messages.quotedMessage(quote.price_cents, quote.id, siteUrl(), lang),
+      replyText: messages.quotedMessage(quote.price_cents, quote.currency, quote.id, siteUrl(), lang),
       state: 'QUOTED',
       context: { lastQuoteId: quote.id, failCount: 0, lang },
     }
@@ -223,6 +227,17 @@ export async function processInboundMessage(
   const session = await loadOrCreateSession(phone)
   const context = (session.context ?? {}) as SessionContext
   const lang = detectLocale(body, context.lang ?? DEFAULT_LOCALE)
+
+  // Rate-limited here (not in the webhook route) so both a real provider
+  // webhook and the /wa-sim server action — which never touches the HTTP
+  // route — are protected the same way.
+  const rateLimit = await checkRateLimit(`wa:${phone}`, WA_RATE_LIMIT, WA_RATE_WINDOW_SECONDS)
+  if (!rateLimit.allowed) {
+    const replyText = getDictionary(lang).bot.rateLimited
+    await logMessage(phone, 'out', replyText)
+    if (adapter) await adapter.sendMessage(phone, replyText)
+    return { replyText, state: session.state as SessionState }
+  }
 
   let result: { replyText: string; state: SessionState; context: SessionContext }
   switch (session.state as SessionState) {

@@ -1,7 +1,17 @@
-export function formatPrice(cents: number, currency: string = 'usd'): string {
-  return new Intl.NumberFormat('en-US', {
+// Formatting locale per currency — e.g. ILS renders with ₪ on the correct
+// side and Hebrew-appropriate digit grouping under 'he-IL', which plain
+// 'en-US' formatting gets subtly wrong (symbol placement, grouping).
+const CURRENCY_LOCALE: Record<string, string> = {
+  ils: 'he-IL',
+  usd: 'en-US',
+}
+
+export function formatPrice(cents: number, currency: string = 'ils'): string {
+  const normalized = currency.toLowerCase()
+  const locale = CURRENCY_LOCALE[normalized] ?? 'en-US'
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: currency.toUpperCase(),
+    currency: normalized.toUpperCase(),
   }).format(cents / 100)
 }
 

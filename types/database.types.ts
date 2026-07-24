@@ -54,6 +54,7 @@ export interface Database {
           clearance_padding_mm: number
           min_dim_mm: number
           max_dim_mm: number
+          currency: string
           updated_at: string
         }
         Insert: {
@@ -68,6 +69,7 @@ export interface Database {
           clearance_padding_mm?: number
           min_dim_mm?: number
           max_dim_mm?: number
+          currency?: string
           updated_at?: string
         }
         Update: {
@@ -82,6 +84,7 @@ export interface Database {
           clearance_padding_mm?: number
           min_dim_mm?: number
           max_dim_mm?: number
+          currency?: string
           updated_at?: string
         }
         Relationships: []
@@ -175,6 +178,7 @@ export interface Database {
           channel: string
           wa_phone: string | null
           status: string
+          currency: string
           expires_at: string
           created_at: string
         }
@@ -191,6 +195,7 @@ export interface Database {
           channel?: string
           wa_phone?: string | null
           status?: string
+          currency?: string
           expires_at?: string
           created_at?: string
         }
@@ -207,6 +212,7 @@ export interface Database {
           channel?: string
           wa_phone?: string | null
           status?: string
+          currency?: string
           expires_at?: string
           created_at?: string
         }
@@ -406,12 +412,33 @@ export interface Database {
           }
         ]
       }
+      rate_limit_hits: {
+        Row: {
+          bucket_key: string
+          window_start: string
+          count: number
+        }
+        Insert: {
+          bucket_key: string
+          window_start: string
+          count?: number
+        }
+        Update: {
+          bucket_key?: string
+          window_start?: string
+          count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_rate_limit: {
+        Args: { p_bucket_key: string; p_window_start: string }
+        Returns: number
+      }
     }
     Enums: {
       user_role: 'customer' | 'admin'

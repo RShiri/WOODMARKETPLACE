@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { BaseTypePicker } from '@/components/shop/base-type-picker'
 import { PriceCard } from '@/components/shop/price-card'
+import { useCart } from '@/components/shared/cart-context'
 
 // WebGL/Canvas must never run during SSR.
 const BoxPreview = dynamic(() => import('@/components/shop/box-preview').then((m) => m.BoxPreview), {
@@ -37,6 +38,7 @@ export interface CalculatorInitialState {
 interface QuoteResult {
   quoteId: string
   priceCents: number
+  currency: string
   thicknessMm: number
   breakdown: PriceBreakdown
 }
@@ -67,6 +69,7 @@ const DEBOUNCE_MS = 450
 export function Calculator({ initial }: { initial: CalculatorInitialState }) {
   const router = useRouter()
   const { dict } = useLocale()
+  const { addItem } = useCart()
 
   const [tab, setTab] = useState<'dimensions' | 'set'>(initial.tab ?? 'dimensions')
   const [unit, setUnit] = useState<UnitSystem>('cm')
@@ -177,7 +180,8 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
   function handleOrder() {
     if (!quote) return
     setOrdering(true)
-    router.push(`/cart?quote=${quote.quoteId}`)
+    addItem(quote.quoteId, 1)
+    router.push('/cart')
   }
 
   const dims: { key: 'length' | 'width' | 'height'; label: string; value: number | null; set: (mm: number | null) => void }[] = [
