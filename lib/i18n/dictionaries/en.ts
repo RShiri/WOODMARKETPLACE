@@ -71,6 +71,8 @@ export const en: Dictionary = {
     orderButton: 'Order this box',
     preparingCheckout: 'Preparing checkout…',
     thicknessAndBase: '{thickness}mm acrylic · {base}',
+    previewHint: 'Drag to rotate',
+    previewPlaceholderNote: 'Example size shown',
   },
   baseTypes: {
     none: { label: 'No base', description: 'Just the clear hood — rests on your own shelf.' },

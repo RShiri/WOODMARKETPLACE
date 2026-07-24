@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import { toast } from 'sonner'
 
@@ -9,10 +10,17 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { BaseTypePicker } from '@/components/shop/base-type-picker'
 import { PriceCard } from '@/components/shop/price-card'
+
+// WebGL/Canvas must never run during SSR.
+const BoxPreview = dynamic(() => import('@/components/shop/box-preview').then((m) => m.BoxPreview), {
+  ssr: false,
+  loading: () => <Skeleton className="h-64 w-full rounded-lg sm:h-80" />,
+})
 import { tf } from '@/lib/i18n/format'
 import { useLocale } from '@/lib/i18n/locale-context'
 import type { BaseType, PriceBreakdown } from '@/lib/pricing/engine'
@@ -181,6 +189,8 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
       <div className="flex flex-col gap-6">
+        <BoxPreview lengthMm={lengthMm} widthMm={widthMm} heightMm={heightMm} baseType={baseType} />
+
         <Tabs value={tab} onValueChange={(v) => setTab(v as 'dimensions' | 'set')}>
           <TabsList>
             <TabsTrigger value="dimensions">{dict.calculator.tabDimensions}</TabsTrigger>

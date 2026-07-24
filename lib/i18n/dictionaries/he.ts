@@ -68,6 +68,8 @@ export const he: Dictionary = {
     orderButton: 'הזמינו את הקופסה',
     preparingCheckout: 'מכינים את הקופה…',
     thicknessAndBase: 'אקריליק {thickness} מ״מ · {base}',
+    previewHint: 'גררו כדי לסובב',
+    previewPlaceholderNote: 'מוצג גודל לדוגמה',
   },
   baseTypes: {
     none: { label: 'בלי בסיס', description: 'רק הכיפה השקופה — מונחת על המדף שלכם.' },

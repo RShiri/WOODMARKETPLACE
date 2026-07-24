@@ -81,6 +81,8 @@ export interface Dictionary {
     orderButton: string
     preparingCheckout: string
     thicknessAndBase: string // "{thickness}" and "{base}" placeholders
+    previewHint: string
+    previewPlaceholderNote: string
   }
   baseTypes: {
     none: BaseTypeCopy
