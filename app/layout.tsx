@@ -23,7 +23,7 @@ const heebo = Heebo({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const siteName = "BrickCase";
 const siteDescription =
   "Custom perspex (acrylic) display boxes for LEGO collectors. Enter your dimensions or a LEGO set number and get a fair, transparent price instantly — order on the web or over WhatsApp.";
