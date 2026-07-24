@@ -23,13 +23,33 @@ const heebo = Heebo({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+// process.env.NEXT_PUBLIC_SITE_URL is hand-entered in a dashboard, so it may
+// be missing, blank, or missing its scheme (e.g. "my-app.vercel.app") — try
+// as-is, retry with an https:// prefix, then fall back rather than let a
+// malformed value crash the entire production build.
+function resolveSiteUrl(): URL {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (raw) {
+    try {
+      return new URL(raw);
+    } catch {
+      try {
+        return new URL(`https://${raw}`);
+      } catch {
+        // fall through to default
+      }
+    }
+  }
+  return new URL("http://localhost:3000");
+}
+
+const siteUrl = resolveSiteUrl();
 const siteName = "BrickCase";
 const siteDescription =
   "Custom perspex (acrylic) display boxes for LEGO collectors. Enter your dimensions or a LEGO set number and get a fair, transparent price instantly — order on the web or over WhatsApp.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: siteUrl,
   title: {
     default: "BrickCase | Custom Display Boxes for LEGO Collectors",
     template: "%s | BrickCase",
