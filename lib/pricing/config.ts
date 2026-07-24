@@ -25,7 +25,11 @@ export async function loadPricingContext(): Promise<PricingContext> {
     ])
 
   if (configError || !configRow) {
-    throw new Error('pricing_config is not seeded — run supabase/seed.sql.')
+    throw new Error(
+      configError
+        ? `pricing_config query failed: ${configError.message}`
+        : 'pricing_config is not seeded — run supabase/seed.sql.'
+    )
   }
   if (ratesError) {
     throw new Error(`Could not load material_costs: ${ratesError.message}`)
@@ -74,7 +78,11 @@ export async function getClearancePaddingMm(): Promise<number> {
     .single()
 
   if (error || !data) {
-    throw new Error('pricing_config is not seeded — run supabase/seed.sql.')
+    throw new Error(
+      error
+        ? `pricing_config query failed: ${error.message}`
+        : 'pricing_config is not seeded — run supabase/seed.sql.'
+    )
   }
   return data.clearance_padding_mm
 }

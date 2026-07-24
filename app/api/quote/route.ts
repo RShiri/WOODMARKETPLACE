@@ -60,6 +60,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 422 })
     }
     console.error('POST /api/quote failed', error)
-    return NextResponse.json({ error: 'Could not calculate a price. Please try again.' }, { status: 500 })
+    // Surfaced to the client too, not just logs — this is pre-launch with no
+    // real traffic yet, and Postgres/Supabase client errors here are
+    // descriptive strings (bad key, missing table, RLS denial), not secrets.
+    // Tighten this back to a generic message before going live for real.
+    const detail = error instanceof Error ? error.message : String(error)
+    return NextResponse.json(
+      { error: 'Could not calculate a price. Please try again.', detail },
+      { status: 500 }
+    )
   }
 }

@@ -137,7 +137,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
       const data = await response.json()
       if (requestId !== requestIdRef.current) return // stale response, ignore
       if (!response.ok) {
-        setQuoteError(data.error ?? 'Could not calculate a price.')
+        setQuoteError(data.detail ? `${data.error} (${data.detail})` : data.error ?? 'Could not calculate a price.')
         setQuote(null)
         return
       }
