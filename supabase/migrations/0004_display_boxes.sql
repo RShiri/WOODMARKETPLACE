@@ -39,7 +39,16 @@ drop policy if exists "artist_banners_select_all" on storage.objects;
 drop policy if exists "artist_banners_insert_own" on storage.objects;
 drop policy if exists "artist_banners_update_own" on storage.objects;
 drop policy if exists "artist_banners_delete_own" on storage.objects;
-delete from storage.buckets where id in ('product-images', 'artist-banners');
+-- Supabase's managed platform blocks direct DELETE on storage.buckets
+-- (must go through the Storage API instead) — the policies above are the
+-- part that actually matters for security; dropping the bucket rows
+-- themselves is just tidiness, so swallow the error if it's blocked.
+do $$
+begin
+  delete from storage.buckets where id in ('product-images', 'artist-banners');
+exception when others then
+  raise notice 'Skipping storage.buckets row cleanup (blocked by platform, use Storage API/dashboard if you want these removed): %', sqlerrm;
+end $$;
 
 drop type if exists product_status;
 drop type if exists inquiry_status;
