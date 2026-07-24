@@ -1,8 +1,15 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { Package } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import type { BoxGalleryItem } from '@/types/database.types'
+
+function galleryImageUrl(imagePath: string): string | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) return null
+  return `${supabaseUrl}/storage/v1/object/public/gallery-images/${imagePath}`
+}
 
 export function GalleryGrid({
   items,
@@ -30,11 +37,23 @@ export function GalleryGrid({
             ? `/calculator?l=${item.length_mm}&w=${item.width_mm}&h=${item.height_mm}`
             : '/calculator'
 
+        const imageUrl = item.image_path ? galleryImageUrl(item.image_path) : null
+
         return (
           <Link key={item.id} href={href} className="group">
             <Card className="h-full overflow-hidden transition-shadow group-hover:shadow-md">
-              <div className="flex aspect-[4/3] items-center justify-center bg-muted">
-                <Package className="h-10 w-10 text-muted-foreground/50" />
+              <div className="relative flex aspect-[4/3] items-center justify-center bg-muted">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={item.title}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <Package className="h-10 w-10 text-muted-foreground/50" />
+                )}
               </div>
               <CardContent className="flex flex-col gap-1 p-4">
                 <h3 className="font-semibold text-foreground">{item.title}</h3>
