@@ -18,6 +18,8 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
     heightMm: quote.height_mm,
     baseType: quote.base_type,
     thicknessMm: quote.thickness_mm,
+    shippingMethod: quote.shipping_method,
+    oversize: quote.shipping_method === 'oversized_freight',
     legoSetId: quote.lego_set_id,
     priceCents: quote.price_cents,
     currency: quote.currency,

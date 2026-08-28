@@ -1,8 +1,22 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { Json, Quote } from '@/types/database.types'
 
-import { calculatePrice, type BaseType } from './engine'
+import { calculatePrice, evaluateSpan, type BaseType, type SpanAssessment } from './engine'
 import { loadPricingContext } from './config'
+
+export interface SizePolicy {
+  /** Longest dimension above which a box is oversized (6mm walls, freight, structural warning). */
+  oversizeThresholdMm: number
+  /** Longest dimension above which the engine refuses to quote at all. */
+  maxDimMm: number
+}
+
+export interface CreateQuoteResult {
+  quote: Quote
+  assessment: SpanAssessment
+  /** The thresholds this quote was judged against, so callers can explain themselves in the UI. */
+  sizePolicy: SizePolicy
+}
 
 export interface CreateQuoteParams {
   lengthMm: number
@@ -18,8 +32,12 @@ export interface CreateQuoteParams {
  * The one function that creates a quote, called by both POST /api/quote
  * (web calculator) and lib/bot (WhatsApp) — guarantees every channel prices
  * a box through the exact same engine call and persists it the same way.
+ *
+ * Returns the size assessment and the thresholds alongside the quote so the
+ * caller can render the oversize warning without re-reading pricing_config or
+ * duplicating the threshold client-side.
  */
-export async function createQuote(params: CreateQuoteParams): Promise<Quote> {
+export async function createQuote(params: CreateQuoteParams): Promise<CreateQuoteResult> {
   const { config, rates, currency } = await loadPricingContext()
 
   const result = calculatePrice(
@@ -42,6 +60,7 @@ export async function createQuote(params: CreateQuoteParams): Promise<Quote> {
       height_mm: params.heightMm,
       base_type: params.baseType,
       thickness_mm: result.thicknessMm,
+      shipping_method: result.shippingMethod,
       lego_set_id: params.legoSetId ?? null,
       price_cents: result.priceCents,
       breakdown: result.breakdown as unknown as Json,
@@ -56,7 +75,14 @@ export async function createQuote(params: CreateQuoteParams): Promise<Quote> {
     throw new Error(`Could not create quote: ${error?.message ?? 'unknown error'}`)
   }
 
-  return data
+  return {
+    quote: data,
+    assessment: evaluateSpan(params, config),
+    sizePolicy: {
+      oversizeThresholdMm: config.oversizeThresholdMm,
+      maxDimMm: config.maxDimMm,
+    },
+  }
 }
 
 export async function getQuoteById(id: string): Promise<Quote | null> {

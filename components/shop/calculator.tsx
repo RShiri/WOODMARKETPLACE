@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { BaseTypePicker } from '@/components/shop/base-type-picker'
-import { PriceCard } from '@/components/shop/price-card'
+import { PriceCard, type QuoteError } from '@/components/shop/price-card'
 import { useCart } from '@/components/shared/cart-context'
 
 // WebGL/Canvas must never run during SSR.
@@ -24,7 +24,7 @@ const BoxPreview = dynamic(() => import('@/components/shop/box-preview').then((m
 })
 import { tf } from '@/lib/i18n/format'
 import { useLocale } from '@/lib/i18n/locale-context'
-import type { BaseType, PriceBreakdown } from '@/lib/pricing/engine'
+import type { BaseType, PriceBreakdown, ShippingMethod } from '@/lib/pricing/engine'
 
 export interface CalculatorInitialState {
   lengthMm?: number
@@ -40,6 +40,9 @@ interface QuoteResult {
   priceCents: number
   currency: string
   thicknessMm: number
+  shippingMethod: ShippingMethod
+  oversize: boolean
+  oversizeThresholdMm: number
   breakdown: PriceBreakdown
 }
 
@@ -86,7 +89,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
 
   const [quote, setQuote] = useState<QuoteResult | null>(null)
   const [quoteLoading, setQuoteLoading] = useState(false)
-  const [quoteError, setQuoteError] = useState<string | null>(null)
+  const [quoteError, setQuoteError] = useState<QuoteError | null>(null)
   const [ordering, setOrdering] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -137,14 +140,24 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
       const data = await response.json()
       if (requestId !== requestIdRef.current) return // stale response, ignore
       if (!response.ok) {
-        setQuoteError(data.detail ? `${data.error} (${data.detail})` : data.error ?? 'Could not calculate a price.')
+        setQuoteError({
+          message: data.detail
+            ? `${data.error} (${data.detail})`
+            : data.error ?? 'Could not calculate a price.',
+          code: data.code ?? null,
+          limitMm: data.limitMm ?? null,
+        })
         setQuote(null)
         return
       }
       setQuote(data)
     } catch {
       if (requestId !== requestIdRef.current) return
-      setQuoteError('Could not reach the pricing service. Please try again.')
+      setQuoteError({
+        message: 'Could not reach the pricing service. Please try again.',
+        code: null,
+        limitMm: null,
+      })
     } finally {
       if (requestId === requestIdRef.current) setQuoteLoading(false)
     }
@@ -326,6 +339,7 @@ export function Calculator({ initial }: { initial: CalculatorInitialState }) {
           loading={quoteLoading}
           error={quoteError}
           baseType={baseType}
+          dimensionsMm={{ lengthMm, widthMm, heightMm }}
           onOrder={handleOrder}
           ordering={ordering}
         />

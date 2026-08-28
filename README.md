@@ -119,9 +119,15 @@ npm test
 ## Environment Variables
 
 Never commit real secrets. Copy `.env.example` to `.env.local` and fill in your own values.
-`BRICKSET_API_KEY` and `REBRICKABLE_API_KEY` are optional — the LEGO dimension resolver falls
-back to a piece-count heuristic (clearly labeled as an estimate) when they're absent, so the
-app runs end-to-end with zero external API keys. `SUPABASE_SERVICE_ROLE_KEY` is required —
+`BRICKSET_API_KEY`, the four `BRICKLINK_*` credentials, and `REBRICKABLE_API_KEY` are all
+optional — the LEGO dimension resolver tries each in turn and falls back to a piece-count
+heuristic (clearly labeled as an estimate) when they're absent, so the app runs end-to-end
+with zero external API keys. Note that BrickLink records *packaging* dimensions rather than
+built-model dimensions, so anything resolved from it is labeled "estimated" and Brickset is
+preferred whenever it has the set on file. `NEXT_PUBLIC_SUPPORT_WHATSAPP` /
+`NEXT_PUBLIC_SUPPORT_EMAIL` are also optional, but without one of them the "Request a Custom
+Engineered Quote" CTA (shown for boxes over `pricing_config.max_dim_mm`) has nowhere to send
+the customer. `SUPABASE_SERVICE_ROLE_KEY` is required —
 quotes, orders, and the WhatsApp bot all read/write through the service-role client server-side
 (see ARCHITECTURE.md's RLS design notes for why).
 

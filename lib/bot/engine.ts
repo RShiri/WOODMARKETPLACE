@@ -177,7 +177,7 @@ async function handleAskBase(
 ): Promise<{ replyText: string; state: SessionState; context: SessionContext }> {
   const baseType = parseBaseChoice(body)
   if (baseType && context.dims) {
-    const quote = await createQuote({
+    const { quote } = await createQuote({
       lengthMm: context.dims.lengthMm,
       widthMm: context.dims.widthMm,
       heightMm: context.dims.heightMm,

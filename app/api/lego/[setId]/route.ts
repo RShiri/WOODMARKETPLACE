@@ -22,6 +22,9 @@ export async function GET(_request: NextRequest, { params }: { params: { setId: 
       pieceCount: resolved.pieceCount,
       confidence: resolved.confidence,
       source: resolved.source,
+      // False when the cache was unavailable and this was resolved live —
+      // the lookup still succeeded, it just wasn't persisted.
+      cached: resolved.cached,
       imageUrl: resolved.imageUrl,
       // Raw built-model dimensions, as resolved/cached.
       modelDimensionsMm: {

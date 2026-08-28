@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   calculatePrice,
+  evaluateSpan,
   PricingValidationError,
   selectThicknessMm,
   type MaterialRate,
@@ -22,7 +23,8 @@ const CONFIG: PricingConfigInput = {
   minPriceCents: 8000,
   roundingStepCents: 500,
   minDimMm: 50,
-  maxDimMm: 1000,
+  maxDimMm: 1500,
+  oversizeThresholdMm: 1000,
 }
 
 const RATES: MaterialRate[] = [
@@ -32,6 +34,8 @@ const RATES: MaterialRate[] = [
   { material: 'acrylic_black', thicknessMm: 3, costPerM2Cents: 12600, cutCostPerMCents: 900 },
   { material: 'acrylic_black', thicknessMm: 4, costPerM2Cents: 15600, cutCostPerMCents: 1020 },
   { material: 'acrylic_black', thicknessMm: 5, costPerM2Cents: 19200, cutCostPerMCents: 1140 },
+  { material: 'acrylic_clear', thicknessMm: 6, costPerM2Cents: 24800, cutCostPerMCents: 1700 },
+  { material: 'acrylic_black', thicknessMm: 6, costPerM2Cents: 26900, cutCostPerMCents: 1700 },
 ]
 
 describe('selectThicknessMm', () => {
@@ -46,6 +50,15 @@ describe('selectThicknessMm', () => {
   })
   it('picks 5mm above the mid tier boundary', () => {
     expect(selectThicknessMm({ lengthMm: 601, widthMm: 50, heightMm: 50 })).toBe(5)
+  })
+  it('picks 5mm at the oversize boundary', () => {
+    expect(selectThicknessMm({ lengthMm: 1000, widthMm: 50, heightMm: 50 })).toBe(5)
+  })
+  it('picks 6mm just above the oversize boundary', () => {
+    expect(selectThicknessMm({ lengthMm: 1001, widthMm: 50, heightMm: 50 })).toBe(6)
+  })
+  it('picks 6mm from any axis, not just length', () => {
+    expect(selectThicknessMm({ lengthMm: 400, widthMm: 200, heightMm: 1200 })).toBe(6)
   })
 })
 
@@ -92,7 +105,7 @@ describe('calculatePrice', () => {
   it('rejects dimensions above the configured maximum', () => {
     expect(() =>
       calculatePrice(
-        { lengthMm: 1200, widthMm: 80, heightMm: 60, baseType: 'none' },
+        { lengthMm: 1600, widthMm: 80, heightMm: 60, baseType: 'none' },
         CONFIG,
         RATES
       )
@@ -149,5 +162,106 @@ describe('calculatePrice — real-world calibration', () => {
       RATES
     )
     expectWithinPercent(result.priceCents, 30000, 15)
+  })
+})
+
+
+// The hybrid >100cm boundary: the 1001-1500mm band prices automatically at
+// 6mm with freight shipping and a structural warning; past 1500mm the engine
+// refuses with a code the calculator turns into a custom-quote CTA.
+describe('oversized boxes', () => {
+  const OVERSIZED = { lengthMm: 1200, widthMm: 400, heightMm: 950, baseType: 'acrylic_clear' } as const
+
+  it('prices the 120x40x95cm case that used to be rejected outright', () => {
+    const result = calculatePrice(OVERSIZED, CONFIG, RATES)
+    expect(result.thicknessMm).toBe(6)
+    expect(result.oversize).toBe(true)
+    expect(result.shippingMethod).toBe('oversized_freight')
+    expect(result.priceCents).toBeGreaterThan(0)
+    expect(result.breakdown.longestDimensionMm).toBe(1200)
+  })
+
+  it('leaves a box at the threshold on standard shipping and 5mm', () => {
+    const result = calculatePrice(
+      { lengthMm: 1000, widthMm: 400, heightMm: 300, baseType: 'acrylic_clear' },
+      CONFIG,
+      RATES
+    )
+    expect(result.thicknessMm).toBe(5)
+    expect(result.oversize).toBe(false)
+    expect(result.shippingMethod).toBe('standard')
+  })
+
+  it('flags freight from the first millimetre past the threshold', () => {
+    const result = calculatePrice(
+      { lengthMm: 1001, widthMm: 400, heightMm: 300, baseType: 'acrylic_clear' },
+      CONFIG,
+      RATES
+    )
+    expect(result.oversize).toBe(true)
+    expect(result.shippingMethod).toBe('oversized_freight')
+  })
+
+  it('refuses past the ceiling with the custom-quote code', () => {
+    try {
+      calculatePrice({ lengthMm: 1501, widthMm: 400, heightMm: 300, baseType: 'none' }, CONFIG, RATES)
+      throw new Error('expected a PricingValidationError')
+    } catch (error) {
+      expect(error).toBeInstanceOf(PricingValidationError)
+      expect((error as PricingValidationError).code).toBe('DIMENSION_REQUIRES_CUSTOM_QUOTE')
+    }
+  })
+
+  it('distinguishes an undersized box from an oversized one by code', () => {
+    try {
+      calculatePrice({ lengthMm: 10, widthMm: 400, heightMm: 300, baseType: 'none' }, CONFIG, RATES)
+      throw new Error('expected a PricingValidationError')
+    } catch (error) {
+      expect((error as PricingValidationError).code).toBe('DIMENSION_BELOW_MIN')
+    }
+  })
+
+  it('assesses spans without pricing them', () => {
+    expect(evaluateSpan({ lengthMm: 1200, widthMm: 400, heightMm: 950 }, CONFIG)).toEqual({
+      longestMm: 1200,
+      isOversize: true,
+      requiresCustomQuote: false,
+      shippingMethod: 'oversized_freight',
+    })
+    expect(evaluateSpan({ lengthMm: 1600, widthMm: 400, heightMm: 950 }, CONFIG).requiresCustomQuote).toBe(
+      true
+    )
+  })
+})
+
+// Pins the 6mm rates in supabase/seed.sql to the premium strategy documented
+// in supabase/migrations/0010_oversized_boxes.sql, so a future rate edit that
+// quietly flattens 6mm back to a linear step fails here rather than in
+// production margins.
+describe('6mm premium rate strategy', () => {
+  const MATERIAL_PREMIUM = 1.15
+  const CUT_PREMIUM = 1.35
+
+  function roundTo100(cents: number): number {
+    return Math.round(cents / 100) * 100
+  }
+
+  it.each([
+    { material: 'acrylic_clear' as const, rate4: 13800, rate5: 17400, seeded: 24800 },
+    { material: 'acrylic_black' as const, rate4: 15600, rate5: 19200, seeded: 26900 },
+  ])('derives the seeded $material 6mm rate from the 4/5mm ladder', ({ rate4, rate5, seeded }) => {
+    // The ladder's material delta grows by 600 each step (3000, 3600), so the
+    // linear next step is the 5mm delta plus 600.
+    const linearNext = rate5 + (rate5 - rate4) + 600
+    expect(roundTo100(linearNext * MATERIAL_PREMIUM)).toBe(seeded)
+  })
+
+  it('derives the seeded 6mm cut cost from the flat +120/m step', () => {
+    expect(roundTo100((1140 + 120) * CUT_PREMIUM)).toBe(1700)
+  })
+
+  it('is a genuinely non-linear step, not a proportional one', () => {
+    const proportional = 17400 * (6 / 5)
+    expect(24800).toBeGreaterThan(proportional * 1.15)
   })
 })

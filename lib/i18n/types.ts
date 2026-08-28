@@ -84,6 +84,13 @@ export interface Dictionary {
     thicknessAndBase: string // "{thickness}" and "{base}" placeholders
     previewHint: string
     previewPlaceholderNote: string
+    structuralWarning: string // "{thickness}" and "{span}" placeholders
+    oversizedShippingLabel: string
+    customQuoteTitle: string
+    customQuoteHint: string // "{max}" placeholder
+    customQuoteButton: string
+    customQuoteUnavailable: string
+    customQuoteMessage: string // "{l}", "{w}", "{h}" placeholders
   }
   baseTypes: {
     none: BaseTypeCopy

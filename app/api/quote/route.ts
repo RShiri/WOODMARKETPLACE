@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const quote = await createQuote({
+    const { quote, assessment, sizePolicy } = await createQuote({
       lengthMm: parsed.data.lengthMm,
       widthMm: parsed.data.widthMm,
       heightMm: parsed.data.heightMm,
@@ -52,12 +52,22 @@ export async function POST(request: NextRequest) {
       priceCents: quote.price_cents,
       currency: quote.currency,
       thicknessMm: quote.thickness_mm,
+      shippingMethod: quote.shipping_method,
+      oversize: assessment.isOversize,
+      longestDimensionMm: assessment.longestMm,
+      oversizeThresholdMm: sizePolicy.oversizeThresholdMm,
+      maxDimMm: sizePolicy.maxDimMm,
       breakdown: quote.breakdown,
       expiresAt: quote.expires_at,
     })
   } catch (error) {
     if (error instanceof PricingValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 422 })
+      // `code` is what lets the calculator tell "too big to quote unattended"
+      // apart from an ordinary bad input and offer the custom-quote CTA.
+      return NextResponse.json(
+        { error: error.message, code: error.code, limitMm: error.limitMm },
+        { status: 422 }
+      )
     }
     console.error('POST /api/quote failed', error)
     // Surfaced to the client too, not just logs — this is pre-launch with no

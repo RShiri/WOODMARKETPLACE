@@ -74,6 +74,20 @@ export const en: Dictionary = {
     thicknessAndBase: '{thickness}mm acrylic · {base}',
     previewHint: 'Drag to rotate',
     previewPlaceholderNote: 'Example size shown',
+    structuralWarning:
+      'Note: Your custom dimensions include an extra-long span (over {span} cm). To ensure maximum ' +
+      'structural rigidity and prevent subtle sagging or bowing over time, we have selected our ' +
+      'heavy-duty {thickness}mm acrylic. For optimal stability, contact our support regarding ' +
+      'internal reinforcement beams.',
+    oversizedShippingLabel: 'Oversized / Special Freight',
+    customQuoteTitle: 'Too large for an automated quote',
+    customQuoteHint:
+      'Cases with any side over {max} cm are built to order after an engineering review, so we ' +
+      'price them by hand rather than online.',
+    customQuoteButton: 'Request a Custom Engineered Quote',
+    customQuoteUnavailable: 'Please contact our support team to continue.',
+    customQuoteMessage:
+      'Hi! I would like a custom engineered quote for a display case of {l} x {w} x {h} cm.',
   },
   baseTypes: {
     none: { label: 'No base', description: 'Just the clear hood — rests on your own shelf.' },

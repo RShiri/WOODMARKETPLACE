@@ -9,15 +9,18 @@
 -- back-solved so lib/pricing/engine.ts lands within a few percent of those
 -- real prices across that size range — not a guess. See the pricing engine
 -- tests (lib/pricing/engine.test.ts) for the worked numbers. Material rates
--- below still scale roughly linearly with thickness, same shape as before,
--- just at a realistic overall level (previous values were ~6x too low —
--- literally "illustrative," not sourced from anything).
+-- below scale roughly linearly with thickness through 5mm, same shape as
+-- before, just at a realistic overall level (previous values were ~6x too
+-- low — literally "illustrative," not sourced from anything). The 6mm
+-- oversized tier deliberately breaks that linearity; see its note below.
 insert into pricing_config (
   id, currency, margin_pct, min_margin_cents, assembly_fee_cents,
-  base_led_fee_cents, min_price_cents, rounding_step_cents
+  base_led_fee_cents, min_price_cents, rounding_step_cents,
+  oversize_threshold_mm, max_dim_mm
 ) values (
   1, 'ils', 0.20, 3000, 6000,
-  8000, 8000, 500
+  8000, 8000, 500,
+  1000, 1500
 )
 on conflict (id) do nothing;
 
@@ -32,7 +35,15 @@ values
   ('acrylic_black', 5, 19200, 1140),
   ('acrylic_frosted', 3, 13200, 900),
   ('acrylic_frosted', 4, 16200, 1020),
-  ('acrylic_frosted', 5, 19800, 1140)
+  ('acrylic_frosted', 5, 19800, 1140),
+  -- 6mm is the oversized tier (boxes over 1000mm). Priced as a premium step,
+  -- not a linear one: linear extrapolation of the ladder above (+4200/m2,
+  -- +120/m cut) multiplied by 1.15 on material and 1.35 on cutting, for
+  -- low-volume premium cast stock and materially slower cutting passes.
+  -- Derivation and the test that pins it: supabase/migrations/0010_oversized_boxes.sql.
+  ('acrylic_clear', 6, 24800, 1700),
+  ('acrylic_black', 6, 26900, 1700),
+  ('acrylic_frosted', 6, 27600, 1700)
 on conflict (material, thickness_mm, effective_from) do nothing;
 
 insert into box_gallery (title, length_mm, width_mm, height_mm, blurb, sort_order)

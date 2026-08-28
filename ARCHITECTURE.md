@@ -16,9 +16,9 @@ Defined across [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_
 |---|---|
 | `profiles` | 1:1 with `auth.users`. Holds `role` (`customer` / `admin`). Auto-created via `handle_new_user()` trigger on signup. Optional — checkout does not require an account. |
 | `pricing_config` | Singleton row (id=1) of tunable pricing constants: waste factor, margin %, fees, rounding step, clearance padding, dimension bounds. Mirrored by `lib/pricing/engine.ts`. |
-| `material_costs` | Versioned material rates by `(material, thickness_mm)`. The pricing engine picks thickness from the box's longest dimension, then looks up the active, already-effective rate. |
+| `material_costs` | Versioned material rates by `(material, thickness_mm)`. The pricing engine picks thickness from the box's longest dimension (3mm ≤300mm, 4mm ≤600mm, 5mm ≤1000mm, 6mm above), then looks up the active, already-effective rate. The 6mm oversized tier is priced at a deliberate premium, not a linear step — see `supabase/migrations/0010_oversized_boxes.sql`. |
 | `lego_sets_cache` | Resolved (or estimated) built-model dimensions per LEGO set id, with `source`/`confidence` so the UI can show "estimated — please verify" honestly. |
-| `quotes` | **The single source of truth for a priced box.** Created by both the web calculator and the WhatsApp bot via the same pricing engine call. Checkout always re-reads the price by `id` — never trusts a client-supplied price. Expires after 72h. |
+| `quotes` | **The single source of truth for a priced box.** `shipping_method` is frozen per quote (`oversized_freight` above `pricing_config.oversize_threshold_mm`, else `standard`). Created by both the web calculator and the WhatsApp bot via the same pricing engine call. Checkout always re-reads the price by `id` — never trusts a client-supplied price. Expires after 72h. |
 | `wa_sessions` | One row per phone number; holds the WhatsApp bot's conversation FSM state + context. |
 | `wa_messages` | Append-only in/out message audit log for the WhatsApp bot. |
 | `box_gallery` | Curated marketing gallery for the landing/gallery pages. |
@@ -71,7 +71,7 @@ brickcase/
 │   └── shared/                  # nav, footer
 ├── lib/
 │   ├── pricing/                 # engine.ts (pure) + engine.test.ts, config.ts, quote-service.ts
-│   ├── lego/                    # resolver.ts (tiered: cache -> Brickset -> Rebrickable+heuristic)
+│   ├── lego/                    # resolver.ts (tiered: cache -> Brickset -> BrickLink -> Rebrickable+heuristic)
 │   ├── bot/                     # WhatsApp FSM, parsers, adapters (Simulator/Meta/Twilio)
 │   ├── orders/                  # placeOrder / getOrderById (service-role, guest checkout)
 │   ├── supabase/                # client.ts, server.ts, admin.ts (service role), middleware.ts

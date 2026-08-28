@@ -54,6 +54,7 @@ export interface Database {
           clearance_padding_mm: number
           min_dim_mm: number
           max_dim_mm: number
+          oversize_threshold_mm: number
           currency: string
           updated_at: string
         }
@@ -69,6 +70,7 @@ export interface Database {
           clearance_padding_mm?: number
           min_dim_mm?: number
           max_dim_mm?: number
+          oversize_threshold_mm?: number
           currency?: string
           updated_at?: string
         }
@@ -84,6 +86,7 @@ export interface Database {
           clearance_padding_mm?: number
           min_dim_mm?: number
           max_dim_mm?: number
+          oversize_threshold_mm?: number
           currency?: string
           updated_at?: string
         }
@@ -172,6 +175,7 @@ export interface Database {
           height_mm: number
           base_type: string
           thickness_mm: number
+          shipping_method: string
           lego_set_id: string | null
           price_cents: number
           breakdown: Json
@@ -189,6 +193,7 @@ export interface Database {
           height_mm: number
           base_type: string
           thickness_mm: number
+          shipping_method?: string
           lego_set_id?: string | null
           price_cents: number
           breakdown: Json
@@ -206,6 +211,7 @@ export interface Database {
           height_mm?: number
           base_type?: string
           thickness_mm?: number
+          shipping_method?: string
           lego_set_id?: string | null
           price_cents?: number
           breakdown?: Json

@@ -63,26 +63,48 @@ export async function loadPricingContext(): Promise<PricingContext> {
     roundingStepCents: configRow.rounding_step_cents,
     minDimMm: configRow.min_dim_mm,
     maxDimMm: configRow.max_dim_mm,
+    oversizeThresholdMm: configRow.oversize_threshold_mm,
   }
 
   return { config, rates, currency: configRow.currency }
 }
 
-/** Lightweight query for just the clearance padding, used by the LEGO lookup route. */
-export async function getClearancePaddingMm(): Promise<number> {
-  const supabase = createAdminClient()
-  const { data, error } = await supabase
-    .from('pricing_config')
-    .select('clearance_padding_mm')
-    .eq('id', 1)
-    .single()
+/**
+ * Matches pricing_config.clearance_padding_mm's column default. Used only when
+ * the config row can't be read — see getClearancePaddingMm.
+ */
+export const DEFAULT_CLEARANCE_PADDING_MM = 10
 
-  if (error || !data) {
-    throw new Error(
-      error
-        ? `pricing_config query failed: ${error.message}`
-        : 'pricing_config is not seeded — run supabase/seed.sql.'
+/**
+ * Lightweight query for just the clearance padding, used by the LEGO lookup
+ * route. Falls back to the column default rather than throwing: padding is a
+ * suggestion the user can edit, and a set lookup failing outright because the
+ * database is briefly unreachable is a much worse outcome than suggesting
+ * dimensions with stock padding. Price paths still fail loudly —
+ * loadPricingContext throws — because a wrong price is not recoverable.
+ */
+export async function getClearancePaddingMm(): Promise<number> {
+  try {
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from('pricing_config')
+      .select('clearance_padding_mm')
+      .eq('id', 1)
+      .single()
+
+    if (error || !data) {
+      console.warn(
+        `Falling back to ${DEFAULT_CLEARANCE_PADDING_MM}mm clearance padding: ` +
+          (error?.message ?? 'pricing_config is not seeded — run supabase/seed.sql.')
+      )
+      return DEFAULT_CLEARANCE_PADDING_MM
+    }
+    return data.clearance_padding_mm
+  } catch (error) {
+    console.warn(
+      `Falling back to ${DEFAULT_CLEARANCE_PADDING_MM}mm clearance padding: ` +
+        (error instanceof Error ? error.message : String(error))
     )
+    return DEFAULT_CLEARANCE_PADDING_MM
   }
-  return data.clearance_padding_mm
 }
