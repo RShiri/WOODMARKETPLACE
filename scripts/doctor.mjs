@@ -231,4 +231,27 @@ if (!thicknesses.includes(6)) {
   )
 }
 
-console.log('\n\x1b[32m\x1b[1mAll checks passed.\x1b[0m The calculator should price boxes normally.\n')
+// ------------------------------------------------------------ order schema
+// Not a pricing failure, but it fails just as opaquely: checkout writes
+// orders.shipping_method, so a database behind migration 0011 rejects every
+// order placement while quoting looks perfectly healthy.
+const { response: ordersResponse } = await request(
+  `${url}/rest/v1/orders?select=shipping_method&limit=1`,
+  authHeaders
+)
+
+if (ordersResponse && ordersResponse.status >= 400) {
+  const body = await ordersResponse.text().catch(() => '')
+  if (body.includes('shipping_method')) {
+    fail(
+      'orders is missing shipping_method — migration 0011 has not been applied',
+      'supabase db push        # hosted',
+      'supabase db reset       # local',
+      '',
+      'Quoting works without it, but placing an order fails.'
+    )
+  }
+}
+ok('orders schema is current')
+
+console.log('\n\x1b[32m\x1b[1mAll checks passed.\x1b[0m The calculator should price boxes and accept orders.\n')

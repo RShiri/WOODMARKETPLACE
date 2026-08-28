@@ -216,6 +216,7 @@ export const en: Dictionary = {
     statusFulfilled: 'Fulfilled',
     statusCancelled: 'Cancelled',
     statusRefunded: 'Refunded',
+    oversizedFreight: 'Oversized / Special Freight',
   },
   waSim: {
     title: 'WhatsApp Bot Simulator',

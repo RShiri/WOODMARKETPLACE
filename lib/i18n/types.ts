@@ -213,6 +213,7 @@ export interface Dictionary {
     statusFulfilled: string
     statusCancelled: string
     statusRefunded: string
+    oversizedFreight: string
   }
   waSim: {
     title: string

@@ -22,7 +22,7 @@ Defined across [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_
 | `wa_sessions` | One row per phone number; holds the WhatsApp bot's conversation FSM state + context. |
 | `wa_messages` | Append-only in/out message audit log for the WhatsApp bot. |
 | `box_gallery` | Curated marketing gallery for the landing/gallery pages. |
-| `orders` / `order_items` | Guest-friendly checkout data model — `customer_id` is nullable since most orders originate from a WhatsApp deep-link and must not require login. Line items snapshot the quote's description/price at order time. |
+| `orders` / `order_items` | Guest-friendly checkout data model — `customer_id` is nullable since most orders originate from a WhatsApp deep-link and must not require login. Line items snapshot the quote's description/price at order time. `orders.shipping_method` is `oversized_freight` when **any** line is oversized (one long panel sets handling for the whole shipment), frozen at checkout like `total_price_cents` and `currency`. |
 
 ### Design notes
 

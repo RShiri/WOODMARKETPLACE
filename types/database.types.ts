@@ -324,6 +324,7 @@ export interface Database {
           status: Database['public']['Enums']['order_status']
           total_price_cents: number
           currency: string
+          shipping_method: string
           shipping_address: Json
           created_at: string
           updated_at: string
@@ -338,6 +339,7 @@ export interface Database {
           status?: Database['public']['Enums']['order_status']
           total_price_cents: number
           currency?: string
+          shipping_method?: string
           shipping_address: Json
           created_at?: string
           updated_at?: string
@@ -352,6 +354,7 @@ export interface Database {
           status?: Database['public']['Enums']['order_status']
           total_price_cents?: number
           currency?: string
+          shipping_method?: string
           shipping_address?: Json
           created_at?: string
           updated_at?: string

@@ -1,11 +1,24 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getDictionary } from '@/lib/i18n/dictionaries'
 import { getQuoteById, isQuoteExpired } from '@/lib/pricing/quote-service'
-import type { BaseType } from '@/lib/pricing/engine'
+import type { BaseType, ShippingMethod } from '@/lib/pricing/engine'
 import type { CheckoutInput } from '@/lib/validations/checkout'
 import type { Order, OrderItem, Quote } from '@/types/database.types'
 
 export type PlaceOrderResult = { error: string } | { success: true; orderId: string }
+
+/**
+ * An order ships freight if ANY of its lines does — a single 1.2m panel sets
+ * the handling for the whole shipment, so this is a max across lines rather
+ * than a per-line property. Read off the persisted quotes, never re-derived
+ * from dimensions, so an order keeps the policy that applied when it was
+ * priced even if the threshold moves later.
+ */
+export function shippingMethodForQuotes(quotes: Pick<Quote, 'shipping_method'>[]): ShippingMethod {
+  return quotes.some((q) => q.shipping_method === 'oversized_freight')
+    ? 'oversized_freight'
+    : 'standard'
+}
 
 /**
  * Places an order from one or more quotes (the cart). Never trusts a
@@ -56,6 +69,7 @@ export async function placeOrder(
       status: 'pending',
       total_price_cents: totalPriceCents,
       currency,
+      shipping_method: shippingMethodForQuotes(quotes),
       shipping_address: input.shippingAddress,
     })
     .select('id')

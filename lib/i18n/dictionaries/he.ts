@@ -207,6 +207,7 @@ export const he: Dictionary = {
     statusFulfilled: 'סופקה',
     statusCancelled: 'בוטלה',
     statusRefunded: 'זוכתה',
+    oversizedFreight: 'משלוח חריג גודל — הובלה מיוחדת',
   },
   waSim: {
     title: 'סימולטור בוט וואטסאפ',

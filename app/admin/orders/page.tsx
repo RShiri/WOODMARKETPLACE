@@ -49,6 +49,14 @@ export default async function AdminOrdersPage() {
                       <p className="font-mono text-xs text-muted-foreground">{order.id}</p>
                     </div>
                     <div className="flex items-center gap-3">
+                      {/* Freight orders need different handling before they are
+                          packed, so this sits next to the status control rather
+                          than buried in the line items. */}
+                      {order.shipping_method === 'oversized_freight' && (
+                        <Badge className="border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-100">
+                          {dict.admin.oversizedFreight}
+                        </Badge>
+                      )}
                       <Badge variant="secondary">{formatPrice(order.total_price_cents, order.currency)}</Badge>
                       <OrderStatusSelect orderId={order.id} status={order.status} />
                     </div>
