@@ -35,6 +35,19 @@ export async function loadPricingContext(): Promise<PricingContext> {
     throw new Error(`Could not load material_costs: ${ratesError.message}`)
   }
 
+  // select('*') happily returns a row that predates migration 0010, leaving
+  // oversizeThresholdMm undefined. Every `longest > undefined` comparison in
+  // evaluateSpan is then false, so oversized boxes would silently lose their
+  // freight flag and structural warning while still selecting 6mm and failing
+  // on the missing rate — a confusing half-broken state. Fail loudly instead.
+  if (configRow.oversize_threshold_mm == null) {
+    throw new Error(
+      'pricing_config.oversize_threshold_mm is missing — apply ' +
+        'supabase/migrations/0010_oversized_boxes.sql (it also seeds the 6mm ' +
+        'material rates that oversized boxes need).'
+    )
+  }
+
   // When a (material, thickness) pair has multiple effective_from rows,
   // keep only the most recently effective one per pair.
   const latestByKey = new Map<string, (typeof rateRows)[number]>()
