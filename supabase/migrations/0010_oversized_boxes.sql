@@ -71,12 +71,22 @@ alter table pricing_config
 -- tier rather than a proportional one.
 -- -----------------------------------------------------------------------------
 
+-- Guarded on (material, thickness_mm), not ON CONFLICT: the unique key
+-- includes effective_from, which defaults to now(), so an upsert here would
+-- never conflict with the same rows seeded by supabase/seed.sql and a
+-- `db reset` (migrations then seed) would leave two generations of every 6mm
+-- rate behind.
 insert into material_costs (material, thickness_mm, cost_per_m2_cents, cut_cost_per_m_cents)
-values
-  ('acrylic_clear', 6, 24800, 1700),
+select v.material, v.thickness_mm, v.cost_per_m2_cents, v.cut_cost_per_m_cents
+from (values
+  ('acrylic_clear'::text, 6::smallint, 24800, 1700),
   ('acrylic_black', 6, 26900, 1700),
   ('acrylic_frosted', 6, 27600, 1700)
-on conflict (material, thickness_mm, effective_from) do nothing;
+) as v(material, thickness_mm, cost_per_m2_cents, cut_cost_per_m_cents)
+where not exists (
+  select 1 from material_costs mc
+  where mc.material = v.material and mc.thickness_mm = v.thickness_mm
+);
 
 -- -----------------------------------------------------------------------------
 -- 3. Per-quote shipping method

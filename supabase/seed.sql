@@ -25,9 +25,16 @@ insert into pricing_config (
 on conflict (id) do nothing;
 
 -- Material rates by thickness, in agorot (ILS cents).
+-- Guarded on (material, thickness_mm) rather than ON CONFLICT: the table's
+-- unique key includes effective_from, which defaults to now(), so a plain
+-- upsert never actually conflicts and every re-run would append a duplicate
+-- generation of every rate. Deliberate price *changes* are still inserted as
+-- new effective_from rows by hand; this block only ever establishes the
+-- baseline once.
 insert into material_costs (material, thickness_mm, cost_per_m2_cents, cut_cost_per_m_cents)
-values
-  ('acrylic_clear', 3, 10800, 900),
+select v.material, v.thickness_mm, v.cost_per_m2_cents, v.cut_cost_per_m_cents
+from (values
+  ('acrylic_clear'::text, 3::smallint, 10800, 900),
   ('acrylic_clear', 4, 13800, 1020),
   ('acrylic_clear', 5, 17400, 1140),
   ('acrylic_black', 3, 12600, 900),
@@ -44,7 +51,11 @@ values
   ('acrylic_clear', 6, 24800, 1700),
   ('acrylic_black', 6, 26900, 1700),
   ('acrylic_frosted', 6, 27600, 1700)
-on conflict (material, thickness_mm, effective_from) do nothing;
+) as v(material, thickness_mm, cost_per_m2_cents, cut_cost_per_m_cents)
+where not exists (
+  select 1 from material_costs mc
+  where mc.material = v.material and mc.thickness_mm = v.thickness_mm
+);
 
 insert into box_gallery (title, length_mm, width_mm, height_mm, blurb, sort_order)
 values
