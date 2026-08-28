@@ -116,6 +116,24 @@ functions with unit tests:
 npm test
 ```
 
+## Troubleshooting
+
+If the calculator shows **"Could not calculate a price. Please try again."** — usually with
+`pricing_config query failed: TypeError: fetch failed` — run:
+
+```bash
+npm run doctor
+```
+
+It walks the same path the app takes (env file → Supabase reachability → `pricing_config` row
+→ material rates), stops at the first thing that is actually broken, and prints the command
+that fixes it. It is read-only and never touches your database or env files.
+
+That one UI message covers several very different causes, which is why guessing is slow:
+a missing `.env.local`, a local `supabase start` that isn't running, a hosted project that
+free-tier auto-paused after a week idle, an un-applied migration, or an unseeded database.
+`fetch failed` specifically means the URL was unreachable — the request left and found nothing.
+
 ## Environment Variables
 
 Never commit real secrets. Copy `.env.example` to `.env.local` and fill in your own values.
